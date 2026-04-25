@@ -696,7 +696,8 @@ window.renderResults = async () => {
         <td>${r.avg!==null?`<strong style="color:var(--primary);font-size:1.1rem">${r.avg}</strong>`:"—"}</td>
         <td>${r.count||"—"}</td>
         <td>${r.avg!==null?`<span class="badge ${getBadgeClass(r.avg)}">${getClass(r.avg)}</span>`:"—"}</td>
-        <td>${r.avg!==null?`<button class="btn btn-secondary" onclick="showEvalDetail('${r.id}','${r.name.replace(/'/g,"\'")}','${month}')" style="padding:4px 12px;font-size:0.8rem">تفاصيل</button>`:"—"}</td>
+        <td>${r.avg!==null?`<button class="btn btn-secondary" onclick="showEvalDetail('${r.id}','${r.name.replace(/'/g,"\'")}','${month}')" style="padding:4px 12px;font-size:0.8rem">🔍 تفاصيل</button>
+          <button style="background:#dc2626;color:white;border:none;border-radius:8px;padding:4px 10px;font-size:0.8rem;cursor:pointer;font-family:Cairo,sans-serif;font-weight:600;margin-right:4px" onclick="exportReporterPDF('${r.id}','${r.name}','${month}')">📄 PDF</button>`:"—"}</td>
       </tr>`).join("")}</tbody>
     </table>`;
 };
@@ -1027,6 +1028,220 @@ window.exportPDF = async () => {
   }
 
   doc.save(`Reporter-Evaluation-${month}.pdf`);
+};
+
+
+// ========== PDF فردي مجهول المصدر للمراسل ==========
+window.exportReporterPDF = async (reporterId, reporterName, month) => {
+  const snap = await getDocs(query(collection(db,'evaluations'),
+    where('month','==',month),
+    where('reporterId','==',reporterId)
+  ));
+  const evals = snap.docs.map(d=>d.data());
+
+  if(!evals.length){ alert('لا توجد تقييمات لهذا المراسل في هذا الشهر'); return; }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+
+  const [y, m] = month.split('-');
+  const monthNamesAr = ['','يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  const monthNamesEn = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
+  const monthLabel = monthNamesEn[parseInt(m)] + ' ' + y;
+
+  // ===== HEADER =====
+  doc.setFillColor(13, 148, 136);
+  doc.rect(0, 0, 210, 42, 'F');
+
+  doc.setFillColor(255,255,255,0.15);
+  doc.setDrawColor(255,255,255);
+  doc.setLineWidth(0.5);
+
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(9);
+  doc.setFont('helvetica','normal');
+  doc.text('CONFIDENTIAL — Diwan FM / News Department', 105, 10, {align:'center'});
+
+  doc.setFontSize(20);
+  doc.setFont('helvetica','bold');
+  doc.text('Monthly Performance Report', 105, 22, {align:'center'});
+
+  doc.setFontSize(11);
+  doc.setFont('helvetica','normal');
+  doc.text(monthLabel, 105, 32, {align:'center'});
+
+  // ===== REPORTER INFO BOX =====
+  doc.setFillColor(240,253,250);
+  doc.setDrawColor(13,148,136);
+  doc.setLineWidth(1);
+  doc.roundedRect(10, 48, 190, 28, 4, 4, 'FD');
+
+  doc.setTextColor(13,148,136);
+  doc.setFontSize(14);
+  doc.setFont('helvetica','bold');
+  doc.text('Reporter: ' + reporterName, 15, 60);
+
+  const totalAvg = (evals.reduce((s,e)=>s+e.total,0)/evals.length).toFixed(1);
+  const classification = parseFloat(totalAvg)>=85?'Excellent ⭐':
+    parseFloat(totalAvg)>=70?'Very Good':
+    parseFloat(totalAvg)>=60?'Good':
+    parseFloat(totalAvg)>=50?'Average':'Needs Improvement';
+
+  doc.setFontSize(11);
+  doc.setFont('helvetica','normal');
+  doc.setTextColor(60,60,60);
+  doc.text(`Final Score: ${totalAvg}/100  |  Evaluators: ${evals.length}  |  Classification: ${classification}`, 15, 70);
+
+  // ===== CRITERIA TABLE =====
+  doc.setTextColor(30,30,30);
+  doc.setFontSize(12);
+  doc.setFont('helvetica','bold');
+  doc.text('Evaluation by Criteria', 15, 90);
+
+  const criteriaRows = CRITERIA.map(c=>{
+    const avg = (evals.reduce((s,e)=>s+(e.scores?.[c.id]||0),0)/evals.length).toFixed(1);
+    const weighted = ((parseFloat(avg)/10)*c.weight).toFixed(1);
+    const bar = '█'.repeat(Math.round(parseFloat(avg))) + '░'.repeat(10-Math.round(parseFloat(avg)));
+    const trend = parseFloat(avg)>=8?'↑ Strong':parseFloat(avg)>=6?'→ Average':'↓ Needs Work';
+    return [c.name, `${avg}/10`, `${c.weight}%`, `${weighted}`, trend];
+  });
+
+  doc.autoTable({
+    startY: 95,
+    head:[['Criterion','Score','Weight','Points','Status']],
+    body: criteriaRows,
+    styles:{font:'helvetica', fontSize:10, halign:'center', cellPadding:4},
+    headStyles:{fillColor:[13,148,136], textColor:255, fontStyle:'bold', fontSize:10},
+    columnStyles:{
+      0:{halign:'left', cellWidth:65},
+      1:{cellWidth:25},
+      2:{cellWidth:22},
+      3:{cellWidth:25},
+      4:{cellWidth:35, fontStyle:'bold'}
+    },
+    alternateRowStyles:{fillColor:[240,253,250]},
+    didParseCell: (data) => {
+      if(data.column.index===4 && data.section==='body'){
+        if(data.cell.raw.includes('↑')) data.cell.styles.textColor = [22,163,74];
+        else if(data.cell.raw.includes('↓')) data.cell.styles.textColor = [220,38,38];
+        else data.cell.styles.textColor = [245,158,11];
+      }
+    }
+  });
+
+  // ===== COMMENTS SECTION (anonymous) =====
+  let yPos = doc.lastAutoTable.finalY + 12;
+
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(12);
+  doc.setTextColor(30,30,30);
+  doc.text('Evaluators Comments (Anonymous)', 15, yPos);
+  yPos += 8;
+
+  CRITERIA.forEach(c => {
+    const comments = evals
+      .map(e => e.justifications?.[c.id])
+      .filter(j => j && j.trim().length > 0);
+
+    if(!comments.length) return;
+
+    if(yPos > 255){ doc.addPage(); yPos = 20; }
+
+    doc.setFillColor(248,250,252);
+    doc.setDrawColor(200,200,200);
+    doc.setLineWidth(0.3);
+
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(10);
+    doc.setTextColor(13,118,110);
+    doc.text('▸ ' + c.name, 15, yPos);
+    yPos += 5;
+
+    comments.forEach((comment, i) => {
+      if(yPos > 260){ doc.addPage(); yPos = 20; }
+      const lines = doc.splitTextToSize(`• ${comment}`, 175);
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(9);
+      doc.setTextColor(70,70,70);
+      doc.text(lines, 18, yPos);
+      yPos += lines.length * 5 + 2;
+    });
+    yPos += 4;
+  });
+
+  // ===== RECOMMENDATIONS =====
+  if(yPos > 240){ doc.addPage(); yPos = 20; }
+
+  doc.setFillColor(255,251,235);
+  doc.setDrawColor(245,158,11);
+  doc.setLineWidth(0.8);
+  doc.roundedRect(10, yPos, 190, 8, 2, 2, 'FD');
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(11);
+  doc.setTextColor(146,64,14);
+  doc.text('Recommendations for Improvement', 15, yPos+5.5);
+  yPos += 13;
+
+  const weakCriteria = CRITERIA.filter(c=>{
+    const avg = evals.reduce((s,e)=>s+(e.scores?.[c.id]||0),0)/evals.length;
+    return avg < 6;
+  });
+
+  const strongCriteria = CRITERIA.filter(c=>{
+    const avg = evals.reduce((s,e)=>s+(e.scores?.[c.id]||0),0)/evals.length;
+    return avg >= 8;
+  });
+
+  if(weakCriteria.length){
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(10);
+    doc.setTextColor(220,38,38);
+    doc.text('Points requiring attention:', 15, yPos);
+    yPos += 6;
+    weakCriteria.forEach(c=>{
+      if(yPos > 270){ doc.addPage(); yPos = 20; }
+      const avg = (evals.reduce((s,e)=>s+(e.scores?.[c.id]||0),0)/evals.length).toFixed(1);
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(9);
+      doc.setTextColor(70,70,70);
+      doc.text(`• ${c.name}: ${avg}/10 — Focus and improvement needed in this area.`, 18, yPos);
+      yPos += 6;
+    });
+    yPos += 3;
+  }
+
+  if(strongCriteria.length){
+    if(yPos > 270){ doc.addPage(); yPos = 20; }
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(10);
+    doc.setTextColor(22,163,74);
+    doc.text('Strong points to maintain:', 15, yPos);
+    yPos += 6;
+    strongCriteria.forEach(c=>{
+      if(yPos > 270){ doc.addPage(); yPos = 20; }
+      const avg = (evals.reduce((s,e)=>s+(e.scores?.[c.id]||0),0)/evals.length).toFixed(1);
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(9);
+      doc.setTextColor(70,70,70);
+      doc.text(`• ${c.name}: ${avg}/10 — Keep up this excellent performance.`, 18, yPos);
+      yPos += 6;
+    });
+  }
+
+  // ===== FOOTER =====
+  const pageCount = doc.internal.getNumberOfPages();
+  for(let i=1;i<=pageCount;i++){
+    doc.setPage(i);
+    doc.setFillColor(13,148,136);
+    doc.rect(0, 285, 210, 12, 'F');
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(8);
+    doc.setTextColor(255,255,255);
+    doc.text('Diwan FM — Internal Document — Evaluators are anonymous — Not for distribution', 105, 291, {align:'center'});
+    doc.text(`Page ${i}/${pageCount}`, 195, 291, {align:'right'});
+  }
+
+  doc.save(`${reporterName}-${monthLabel}-Report.pdf`);
 };
 
 </script>
