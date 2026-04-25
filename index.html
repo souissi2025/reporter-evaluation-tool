@@ -595,13 +595,9 @@ window.closeCriteriaForm = () => {
 window.submitEvaluation = async () => {
   // validate
   const missing = CRITERIA.filter(c=>!scores[c.id]);
-  if(missing.length){ alert("يرجى إدخال علامة لجميع المعايير:
-"+missing.map(c=>c.name).join("
-")); return; }
+  if(missing.length){ alert("يرجى إدخال علامة لجميع المعايير:\n"+missing.map(c=>c.name).join("\n")); return; }
   const emptyJustify = CRITERIA.filter(c=>!justifications[c.id]?.trim());
-  if(emptyJustify.length){ alert("يرجى كتابة تعليل لجميع المعايير:
-"+emptyJustify.map(c=>c.name).join("
-")); return; }
+  if(emptyJustify.length){ alert("يرجى كتابة تعليل لجميع المعايير:\n"+emptyJustify.map(c=>c.name).join("\n")); return; }
   const month = document.getElementById("evalMonth").value;
   let total = 0;
   CRITERIA.forEach(c=>{ total += (scores[c.id]/10)*c.weight; });
