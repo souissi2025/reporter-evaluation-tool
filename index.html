@@ -142,7 +142,23 @@ tr:hover td{background:var(--surface2)}
   .stats-grid{grid-template-columns:repeat(2,1fr)}
   .score-btn{width:32px;height:32px;font-size:0.82rem}
 }
+
+/* ===== CHART & PDF ADDITIONS ===== */
+.chart-container{background:var(--surface);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:20px}
+.chart-title{font-size:1rem;font-weight:700;margin-bottom:16px;color:var(--text)}
+.reporter-filter{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.reporter-filter label{font-weight:600;font-size:0.88rem;white-space:nowrap}
+.reporter-filter select{padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Cairo',sans-serif;font-size:0.88rem;min-width:200px}
+.btn-pdf{background:linear-gradient(135deg,#dc2626,#b91c1c);color:white;padding:10px 20px;border:none;border-radius:10px;font-family:'Cairo',sans-serif;font-size:0.9rem;cursor:pointer;font-weight:700;display:flex;align-items:center;gap:8px;transition:all 0.2s}
+.btn-pdf:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(220,38,38,0.3)}
+.btn-chart{background:linear-gradient(135deg,#7c3aed,#6d28d9);color:white;padding:10px 20px;border:none;border-radius:10px;font-family:'Cairo',sans-serif;font-size:0.9rem;cursor:pointer;font-weight:700;display:flex;align-items:center;gap:8px;transition:all 0.2s}
+.btn-chart:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(124,58,237,0.3)}
+.results-actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;align-items:center}
+.no-chart{text-align:center;padding:30px;color:var(--muted);font-size:0.9rem}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 
@@ -286,11 +302,42 @@ tr:hover td{background:var(--surface2)}
       <div class="card">
         <div class="card-header">
           <div class="card-title">📈 نتائج التقييمات</div>
-          <div style="display:flex;gap:10px;align-items:center">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
             <input type="month" id="resultsMonth" onchange="renderResults()" style="border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-family:'Cairo',sans-serif">
+            <button class="btn-pdf" onclick="exportPDF()">📄 تصدير PDF</button>
           </div>
         </div>
         <div id="resultsTable"></div>
+      </div>
+
+      <!-- Chart Section -->
+      <div class="card chart-container">
+        <div class="card-title">📊 تطور أداء المراسلين</div>
+        <div class="reporter-filter" style="margin-top:16px">
+          <label>اختر مراسلاً:</label>
+          <select id="chartReporterSelect" onchange="renderChart()">
+            <option value="">-- اختر مراسلاً --</option>
+          </select>
+          <label style="margin-right:16px">الأشهر الأخيرة:</label>
+          <select id="chartMonthsCount" onchange="renderChart()">
+            <option value="3">3 أشهر</option>
+            <option value="6" selected>6 أشهر</option>
+            <option value="12">12 شهراً</option>
+          </select>
+        </div>
+        <div style="position:relative;height:320px">
+          <canvas id="evolutionChart"></canvas>
+          <div id="noChartMsg" class="no-chart">اختر مراسلاً لعرض تطور أدائه</div>
+        </div>
+      </div>
+
+      <!-- Criteria Chart -->
+      <div class="card chart-container">
+        <div class="card-title">🎯 تفاصيل المعايير — آخر شهر</div>
+        <div style="position:relative;height:300px">
+          <canvas id="criteriaChart"></canvas>
+          <div id="noCriteriaMsg" class="no-chart">اختر مراسلاً من القائمة أعلاه</div>
+        </div>
       </div>
     </div>
 
@@ -470,7 +517,7 @@ window.showPage = (page) => {
   document.querySelectorAll(".nav-tab").forEach(t=>t.classList.remove("active"));
   document.getElementById(page+"Page").classList.add("active");
   event.target.classList.add("active");
-  if(page==="results") renderResults();
+  if(page==="results"){ renderResults(); populateChartSelect(); }
   if(page==="admin") loadAdmin();
   if(page==="evaluate") loadEvaluatePage();
 };
@@ -750,6 +797,238 @@ function getBadgeClass(score){
 document.querySelectorAll(".modal-overlay").forEach(m=>{
   m.addEventListener("click",e=>{ if(e.target===m) m.classList.remove("active"); });
 });
+
+
+// ========== CHART VARIABLES ==========
+let evolutionChartInstance = null;
+let criteriaChartInstance = null;
+
+// ========== POPULATE CHART REPORTER SELECT ==========
+async function populateChartSelect(){
+  const reporters = await getReporters();
+  const sel = document.getElementById('chartReporterSelect');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">-- اختر مراسلاً --</option>' +
+    reporters.map(r=>`<option value="${r.id}" data-name="${r.name}">${r.name}</option>`).join('');
+  if(current) sel.value = current;
+}
+
+// ========== RENDER EVOLUTION CHART ==========
+window.renderChart = async () => {
+  const reporterId = document.getElementById('chartReporterSelect').value;
+  const monthsCount = parseInt(document.getElementById('chartMonthsCount').value);
+  const noMsg = document.getElementById('noChartMsg');
+  const noCriteriaMsg = document.getElementById('noCriteriaMsg');
+
+  if(!reporterId){ 
+    noMsg.style.display='block'; 
+    noCriteriaMsg.style.display='block';
+    if(evolutionChartInstance){ evolutionChartInstance.destroy(); evolutionChartInstance=null; }
+    if(criteriaChartInstance){ criteriaChartInstance.destroy(); criteriaChartInstance=null; }
+    return; 
+  }
+  noMsg.style.display='none';
+  noCriteriaMsg.style.display='none';
+
+  // Generate last N months
+  const months = [];
+  const now = new Date();
+  for(let i=monthsCount-1; i>=0; i--){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    months.push(d.toISOString().slice(0,7));
+  }
+
+  // Fetch all evaluations for this reporter
+  const snap = await getDocs(query(collection(db,'evaluations'), where('reporterId','==',reporterId)));
+  const allEvals = snap.docs.map(d=>d.data());
+
+  // Calculate monthly averages
+  const monthlyAvgs = months.map(m=>{
+    const mEvals = allEvals.filter(e=>e.month===m);
+    if(!mEvals.length) return null;
+    return parseFloat((mEvals.reduce((s,e)=>s+e.total,0)/mEvals.length).toFixed(1));
+  });
+
+  const reporterName = document.getElementById('chartReporterSelect').selectedOptions[0].dataset.name;
+
+  // Evolution Chart
+  if(evolutionChartInstance) evolutionChartInstance.destroy();
+  const ctx1 = document.getElementById('evolutionChart').getContext('2d');
+  evolutionChartInstance = new Chart(ctx1, {
+    type: 'line',
+    data: {
+      labels: months.map(m=>{
+        const [y,mo] = m.split('-');
+        const names = ['','يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+        return names[parseInt(mo)] + ' ' + y;
+      }),
+      datasets:[{
+        label: reporterName,
+        data: monthlyAvgs,
+        borderColor: '#0d9488',
+        backgroundColor: 'rgba(13,148,136,0.1)',
+        borderWidth: 3,
+        pointBackgroundColor: '#0d9488',
+        pointRadius: 6,
+        pointHoverRadius: 8,
+        fill: true,
+        tension: 0.3,
+        spanGaps: true
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          callbacks:{
+            label: ctx => `المتوسط: ${ctx.raw !== null ? ctx.raw : 'لا يوجد تقييم'}/100`
+          }
+        }
+      },
+      scales:{
+        y:{min:0,max:100,ticks:{font:{family:'Cairo'}},grid:{color:'rgba(0,0,0,0.05)'},
+          title:{display:true,text:'النتيجة /100',font:{family:'Cairo'}}},
+        x:{ticks:{font:{family:'Cairo'}},grid:{display:false}}
+      }
+    }
+  });
+
+  // Criteria chart - last available month
+  const lastMonthEvals = allEvals.filter(e=>e.month===months[months.length-1]);
+  if(lastMonthEvals.length){
+    const criteriaAvgs = CRITERIA.map(c=>{
+      const avg = lastMonthEvals.reduce((s,e)=>s+(e.scores[c.id]||0),0)/lastMonthEvals.length;
+      return parseFloat(avg.toFixed(1));
+    });
+    if(criteriaChartInstance) criteriaChartInstance.destroy();
+    const ctx2 = document.getElementById('criteriaChart').getContext('2d');
+    criteriaChartInstance = new Chart(ctx2, {
+      type: 'radar',
+      data: {
+        labels: CRITERIA.map(c=>c.name),
+        datasets:[{
+          label: 'متوسط المعايير (من 10)',
+          data: criteriaAvgs,
+          borderColor: '#0d9488',
+          backgroundColor: 'rgba(13,148,136,0.15)',
+          borderWidth: 2,
+          pointBackgroundColor: '#0d9488',
+          pointRadius: 5
+        }]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{labels:{font:{family:'Cairo'}}}},
+        scales:{r:{
+          min:0, max:10,
+          ticks:{font:{family:'Cairo'},stepSize:2},
+          pointLabels:{font:{family:'Cairo',size:11}}
+        }}
+      }
+    });
+  }
+};
+
+// ========== EXPORT PDF ==========
+window.exportPDF = async () => {
+  const month = document.getElementById('resultsMonth').value;
+  const reporters = await getReporters();
+  const evalsSnap = await getDocs(query(collection(db,'evaluations'),where('month','==',month)));
+  const evals = evalsSnap.docs.map(d=>d.data());
+
+  if(!evals.length){ alert('لا توجد تقييمات لهذا الشهر'); return; }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+
+  // Header
+  doc.setFillColor(13, 148, 136);
+  doc.rect(0, 0, 210, 35, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(18);
+  doc.setFont('helvetica','bold');
+  doc.text('Reporter Evaluation Report', 105, 15, {align:'center'});
+  doc.setFontSize(12);
+  doc.setFont('helvetica','normal');
+
+  const [y, m] = month.split('-');
+  const monthNames = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
+  doc.text(`Diwan FM - News Department | ${monthNames[parseInt(m)]} ${y}`, 105, 25, {align:'center'});
+
+  // Summary table
+  const rows = reporters.map((r,i)=>{
+    const rEvals = evals.filter(e=>e.reporterId===r.id);
+    if(!rEvals.length) return null;
+    const avg = (rEvals.reduce((s,e)=>s+e.total,0)/rEvals.length).toFixed(1);
+    const cls = parseFloat(avg)>=85?'Excellent':parseFloat(avg)>=70?'Very Good':parseFloat(avg)>=60?'Good':parseFloat(avg)>=50?'Average':'Weak';
+    return [i+1, r.name, r.region||'—', avg+'/100', rEvals.length, cls];
+  }).filter(Boolean);
+
+  doc.autoTable({
+    startY: 45,
+    head:[['#','Reporter','Region','Final Score','Evaluators','Classification']],
+    body: rows,
+    styles:{font:'helvetica', fontSize:10, halign:'center'},
+    headStyles:{fillColor:[13,148,136], textColor:255, fontStyle:'bold'},
+    alternateRowStyles:{fillColor:[240,253,250]},
+    columnStyles:{1:{halign:'left'}, 2:{halign:'left'}}
+  });
+
+  // Detailed section per reporter
+  let yPos = doc.lastAutoTable.finalY + 15;
+
+  for(const reporter of reporters){
+    const rEvals = evals.filter(e=>e.reporterId===reporter.id);
+    if(!rEvals.length) continue;
+
+    if(yPos > 240){ doc.addPage(); yPos = 20; }
+
+    doc.setFillColor(240,253,250);
+    doc.rect(10, yPos-6, 190, 10, 'F');
+    doc.setTextColor(13,148,136);
+    doc.setFontSize(12);
+    doc.setFont('helvetica','bold');
+    doc.text(reporter.name + (reporter.region ? ` — ${reporter.region}` : ''), 15, yPos);
+
+    const avg = (rEvals.reduce((s,e)=>s+e.total,0)/rEvals.length).toFixed(1);
+    doc.setTextColor(100,100,100);
+    doc.setFontSize(10);
+    doc.setFont('helvetica','normal');
+    doc.text(`Average: ${avg}/100 | Evaluators: ${rEvals.length}`, 15, yPos+7);
+    yPos += 15;
+
+    // Criteria averages
+    const criteriaRows = CRITERIA.map(c=>{
+      const avg = (rEvals.reduce((s,e)=>s+(e.scores[c.id]||0),0)/rEvals.length).toFixed(1);
+      const weighted = ((parseFloat(avg)/10)*c.weight).toFixed(1);
+      return [c.name, `${avg}/10`, `${c.weight}%`, `${weighted}pts`];
+    });
+
+    doc.autoTable({
+      startY: yPos,
+      head:[['Criterion','Score','Weight','Points']],
+      body: criteriaRows,
+      styles:{font:'helvetica',fontSize:9,halign:'center'},
+      headStyles:{fillColor:[15,118,110],textColor:255},
+      margin:{left:15,right:15},
+      tableWidth: 180
+    });
+    yPos = doc.lastAutoTable.finalY + 10;
+  }
+
+  // Footer
+  const pageCount = doc.internal.getNumberOfPages();
+  for(let i=1;i<=pageCount;i++){
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(150,150,150);
+    doc.text(`Diwan FM — Confidential | Page ${i}/${pageCount}`, 105, 290, {align:'center'});
+  }
+
+  doc.save(`Reporter-Evaluation-${month}.pdf`);
+};
+
 </script>
 </body>
 </html>
