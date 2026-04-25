@@ -1,871 +1,759 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام تقييم المراسلين</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --primary: #0d9488;
-            --primary-light: #14b8a6;
-            --secondary: #f1f5f9;
-            --background: #ffffff;
-            --foreground: #1e293b;
-            --muted: #64748b;
-            --border: #e2e8f0;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--secondary);
-            color: var(--foreground);
-            line-height: 1.6;
-        }
-
-        .container {
-            display: flex;
-            height: 100vh;
-        }
-
-        /* Sidebar */
-        .sidebar {
-            width: 250px;
-            background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
-            color: white;
-            padding: 20px;
-            overflow-y: auto;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .sidebar h1 {
-            font-size: 1.5rem;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-
-        .nav-item {
-            padding: 12px 16px;
-            margin-bottom: 8px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            color: white;
-            width: 100%;
-            text-align: right;
-            font-size: 1rem;
-        }
-
-        .nav-item:hover,
-        .nav-item.active {
-            background: rgba(255, 255, 255, 0.25);
-            transform: translateX(-5px);
-        }
-
-        /* Main Content */
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .header {
-            background: white;
-            padding: 20px 30px;
-            border-bottom: 1px solid var(--border);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-
-        .header h2 {
-            font-size: 2rem;
-            color: var(--foreground);
-        }
-
-        .content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 30px;
-        }
-
-        /* Cards */
-        .card {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            border: 1px solid var(--border);
-        }
-
-        .card-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-bottom: 15px;
-            color: var(--foreground);
-        }
-
-        /* Grid */
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .stat-card {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid var(--border);
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: var(--primary);
-            margin: 10px 0;
-        }
-
-        .stat-label {
-            color: var(--muted);
-            font-size: 0.9rem;
-        }
-
-        /* Form */
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: var(--foreground);
-        }
-
-        input[type="text"],
-        input[type="number"],
-        textarea,
-        select {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 1rem;
-            font-family: inherit;
-        }
-
-        input[type="range"] {
-            width: 100%;
-            height: 6px;
-            border-radius: 3px;
-            background: var(--border);
-            outline: none;
-            -webkit-appearance: none;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: var(--primary);
-            cursor: pointer;
-        }
-
-        input[type="range"]::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: var(--primary);
-            cursor: pointer;
-            border: none;
-        }
-
-        textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-
-        /* Buttons */
-        button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-light);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
-        }
-
-        .btn-secondary {
-            background: var(--secondary);
-            color: var(--foreground);
-            border: 1px solid var(--border);
-        }
-
-        .btn-secondary:hover {
-            background: var(--border);
-        }
-
-        .btn-danger {
-            background: var(--danger);
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #dc2626;
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        /* Tables */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-
-        th {
-            background: var(--secondary);
-            padding: 12px;
-            text-align: right;
-            font-weight: 600;
-            border-bottom: 2px solid var(--border);
-        }
-
-        td {
-            padding: 12px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        tr:hover {
-            background: var(--secondary);
-        }
-
-        /* Badge */
-        .badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .badge-excellent {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .badge-average {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .badge-poor {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        /* Score Display */
-        .score-display {
-            background: linear-gradient(135deg, #f0fdfa 0%, #d1fae5 100%);
-            border: 2px solid var(--primary);
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            margin: 20px 0;
-        }
-
-        .score-value {
-            font-size: 3rem;
-            font-weight: bold;
-            color: var(--primary);
-        }
-
-        .score-max {
-            color: var(--muted);
-            font-size: 1.2rem;
-        }
-
-        .score-classification {
-            margin-top: 10px;
-            font-size: 1.2rem;
-            font-weight: 600;
-        }
-
-        /* Slider Container */
-        .slider-container {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-
-        .slider-label {
-            min-width: 150px;
-            font-weight: 500;
-        }
-
-        .slider-value {
-            min-width: 60px;
-            text-align: center;
-            font-weight: 600;
-            color: var(--primary);
-        }
-
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            max-width: 500px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.15);
-        }
-
-        .modal-header {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-bottom: 20px;
-        }
-
-        .modal-footer {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            margin-top: 20px;
-        }
-
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--muted);
-        }
-
-        .empty-state-icon {
-            font-size: 3rem;
-            margin-bottom: 15px;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .container {
-                flex-direction: column;
-            }
-
-            .sidebar {
-                width: 100%;
-                display: flex;
-                gap: 10px;
-                overflow-x: auto;
-                padding: 10px;
-            }
-
-            .nav-item {
-                flex-shrink: 0;
-            }
-
-            .grid {
-                grid-template-columns: 1fr;
-            }
-
-            .header {
-                padding: 15px 20px;
-            }
-
-            .header h2 {
-                font-size: 1.5rem;
-            }
-
-            .content {
-                padding: 15px;
-            }
-        }
-
-        /* Animations */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .card, .stat-card {
-            animation: fadeIn 0.3s ease;
-        }
-
-        /* Hide sections */
-        .page {
-            display: none;
-        }
-
-        .page.active {
-            display: block;
-        }
-
-        /* Progress Bar */
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: var(--border);
-            border-radius: 4px;
-            overflow: hidden;
-            margin-top: 8px;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: var(--primary);
-            transition: width 0.3s ease;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام تقييم المراسلين - ديوان FM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#0d9488;--primary-dark:#0f766e;--primary-light:#99f6e4;
+  --bg:#f0fdf9;--surface:#ffffff;--surface2:#f8fafc;
+  --border:#e2e8f0;--text:#1e293b;--muted:#64748b;
+  --success:#10b981;--warning:#f59e0b;--danger:#ef4444;
+  --radius:12px;--shadow:0 1px 3px rgba(0,0,0,0.1),0 4px 12px rgba(0,0,0,0.05);
+}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* ===== AUTH SCREEN ===== */
+#authScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.auth-box{background:var(--surface);border-radius:20px;padding:40px;width:100%;max-width:420px;box-shadow:var(--shadow);text-align:center}
+.auth-logo{font-size:3rem;margin-bottom:10px}
+.auth-box h1{font-size:1.6rem;font-weight:900;color:var(--primary);margin-bottom:6px}
+.auth-box p{color:var(--muted);margin-bottom:30px;font-size:0.9rem}
+.auth-tabs{display:flex;background:var(--surface2);border-radius:10px;padding:4px;margin-bottom:24px;gap:4px}
+.auth-tab{flex:1;padding:8px;border:none;background:transparent;border-radius:8px;cursor:pointer;font-family:'Cairo',sans-serif;font-size:0.9rem;color:var(--muted);transition:all 0.2s}
+.auth-tab.active{background:var(--primary);color:white;font-weight:600}
+.form-group{margin-bottom:16px;text-align:right}
+.form-group label{display:block;font-size:0.85rem;font-weight:600;margin-bottom:6px;color:var(--text)}
+.form-group input,.form-group select{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:'Cairo',sans-serif;font-size:0.95rem;transition:border-color 0.2s;background:var(--surface)}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:var(--primary)}
+.btn{padding:10px 20px;border:none;border-radius:10px;font-family:'Cairo',sans-serif;font-size:0.95rem;cursor:pointer;transition:all 0.2s;font-weight:600}
+.btn-primary{background:var(--primary);color:white;width:100%;padding:12px}
+.btn-primary:hover{background:var(--primary-dark);transform:translateY(-1px)}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1.5px solid var(--border)}
+.btn-secondary:hover{background:var(--border)}
+.btn-danger{background:var(--danger);color:white}
+.error-msg{background:#fef2f2;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:0.85rem;margin-bottom:16px;display:none}
+
+/* ===== APP LAYOUT ===== */
+#appScreen{display:none;min-height:100vh;flex-direction:column}
+.topbar{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(13,148,136,0.3)}
+.topbar-brand{font-size:1.2rem;font-weight:900}
+.topbar-user{display:flex;align-items:center;gap:12px;font-size:0.9rem}
+.user-badge{background:rgba(255,255,255,0.2);padding:4px 12px;border-radius:20px;font-size:0.8rem}
+.btn-logout{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;padding:6px 14px;border-radius:8px;font-family:'Cairo',sans-serif;font-size:0.8rem;cursor:pointer}
+.btn-logout:hover{background:rgba(255,255,255,0.25)}
+
+.nav-tabs{display:flex;background:var(--surface);border-bottom:2px solid var(--border);padding:0 24px;gap:4px;overflow-x:auto}
+.nav-tab{padding:14px 20px;border:none;background:transparent;font-family:'Cairo',sans-serif;font-size:0.9rem;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all 0.2s;font-weight:600}
+.nav-tab.active{color:var(--primary);border-bottom-color:var(--primary)}
+.nav-tab:hover{color:var(--primary)}
+
+.app-content{flex:1;padding:24px;max-width:1100px;margin:0 auto;width:100%}
+.page{display:none}.page.active{display:block}
+
+/* ===== CARDS & GRIDS ===== */
+.card{background:var(--surface);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:20px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.card-title{font-size:1.1rem;font-weight:700;color:var(--text)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:var(--surface);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);border:1px solid var(--border);text-align:center}
+.stat-value{font-size:2.2rem;font-weight:900;color:var(--primary)}
+.stat-label{color:var(--muted);font-size:0.85rem;margin-top:4px}
+
+/* ===== EVAL FORM ===== */
+.month-selector{display:flex;align-items:center;gap:12px;margin-bottom:20px;background:var(--surface2);padding:14px 18px;border-radius:10px;border:1.5px solid var(--border)}
+.month-selector label{font-weight:600;font-size:0.9rem;white-space:nowrap}
+.month-selector input{border:none;background:transparent;font-family:'Cairo',sans-serif;font-size:0.95rem;color:var(--primary);font-weight:700;cursor:pointer}
+.reporters-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:24px}
+.reporter-card{background:var(--surface);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);border:2px solid var(--border);cursor:pointer;transition:all 0.2s}
+.reporter-card:hover{border-color:var(--primary);transform:translateY(-2px)}
+.reporter-card.selected{border-color:var(--primary);background:#f0fdfa}
+.reporter-card.evaluated{border-color:var(--success);background:#f0fdf4}
+.reporter-name{font-weight:700;font-size:1rem;margin-bottom:4px}
+.reporter-status{font-size:0.78rem;padding:2px 10px;border-radius:20px;display:inline-block;margin-top:6px}
+.status-pending{background:#fef3c7;color:#92400e}
+.status-done{background:#d1fae5;color:#065f46}
+
+/* ===== CRITERIA FORM ===== */
+.criteria-form{display:none}
+.criteria-form.active{display:block}
+.criterion-block{background:var(--surface2);border-radius:10px;padding:18px;margin-bottom:14px;border:1.5px solid var(--border)}
+.criterion-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.criterion-name{font-weight:700;font-size:0.95rem}
+.criterion-weight{background:var(--primary);color:white;padding:2px 10px;border-radius:20px;font-size:0.78rem}
+.score-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.score-label{font-size:0.85rem;color:var(--muted);min-width:60px}
+.score-inputs{display:flex;gap:6px;flex-wrap:wrap}
+.score-btn{width:38px;height:38px;border:2px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-family:'Cairo',sans-serif;font-size:0.9rem;font-weight:700;transition:all 0.15s;color:var(--text)}
+.score-btn:hover{border-color:var(--primary);color:var(--primary)}
+.score-btn.selected{background:var(--primary);border-color:var(--primary);color:white}
+.justification{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Cairo',sans-serif;font-size:0.88rem;resize:vertical;min-height:70px;margin-top:4px}
+.justification:focus{outline:none;border-color:var(--primary)}
+.total-display{background:linear-gradient(135deg,#f0fdfa,#d1fae5);border:2px solid var(--primary);border-radius:var(--radius);padding:20px;text-align:center;margin:20px 0}
+.total-number{font-size:3rem;font-weight:900;color:var(--primary)}
+.total-class{font-size:1.1rem;font-weight:700;margin-top:6px}
+
+/* ===== TABLE ===== */
+table{width:100%;border-collapse:collapse}
+th{background:var(--surface2);padding:12px 14px;text-align:right;font-size:0.85rem;font-weight:700;border-bottom:2px solid var(--border)}
+td{padding:12px 14px;border-bottom:1px solid var(--border);font-size:0.88rem}
+tr:hover td{background:var(--surface2)}
+.badge{display:inline-block;padding:3px 12px;border-radius:20px;font-size:0.78rem;font-weight:700}
+.badge-excellent{background:#d1fae5;color:#065f46}
+.badge-good{background:#dbeafe;color:#1e40af}
+.badge-average{background:#fef3c7;color:#92400e}
+.badge-poor{background:#fee2e2;color:#991b1b}
+
+/* ===== MODAL ===== */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.active{display:flex}
+.modal{background:var(--surface);border-radius:20px;padding:30px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:1.2rem;font-weight:700;margin-bottom:20px;color:var(--primary)}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+
+/* ===== EMPTY STATE ===== */
+.empty{text-align:center;padding:50px 20px;color:var(--muted)}
+.empty-icon{font-size:3rem;margin-bottom:12px}
+.empty h3{font-size:1rem;font-weight:700;margin-bottom:6px;color:var(--text)}
+
+/* ===== DETAIL VIEW ===== */
+.detail-criteria{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:16px}
+.detail-crit{background:var(--surface2);border-radius:10px;padding:14px;border:1.5px solid var(--border)}
+.detail-crit-name{font-size:0.8rem;color:var(--muted);margin-bottom:4px}
+.detail-crit-score{font-size:1.5rem;font-weight:900;color:var(--primary)}
+.detail-crit-justify{font-size:0.78rem;color:var(--muted);margin-top:6px;font-style:italic}
+.eval-list-item{background:var(--surface2);border-radius:10px;padding:14px;margin-bottom:10px;border:1.5px solid var(--border)}
+.eval-list-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+
+/* ===== ADMIN ===== */
+.admin-notice{background:#fef3c7;border:1.5px solid #f59e0b;border-radius:10px;padding:12px 16px;font-size:0.85rem;color:#92400e;margin-bottom:20px}
+.reporters-manage-list .reporter-item{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--surface2);border-radius:10px;margin-bottom:10px;border:1.5px solid var(--border)}
+.reporter-item-name{font-weight:700}
+.reporter-item-role{font-size:0.8rem;color:var(--muted)}
+
+@media(max-width:640px){
+  .nav-tabs{padding:0 10px}
+  .nav-tab{padding:12px 14px;font-size:0.82rem}
+  .app-content{padding:14px}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .score-btn{width:32px;height:32px;font-size:0.82rem}
+}
+</style>
 </head>
 <body>
-    <div class="container">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <h1>تقييم المراسلين</h1>
-            <button class="nav-item active" onclick="showPage('home')">🏠 الرئيسية</button>
-            <button class="nav-item" onclick="showPage('reporters')">👥 المراسلون</button>
-            <button class="nav-item" onclick="showPage('evaluation')">📋 التقييمات</button>
-            <button class="nav-item" onclick="showPage('dashboard')">📊 لوحة التحكم</button>
+
+<!-- ===== AUTH SCREEN ===== -->
+<div id="authScreen">
+  <div class="auth-box">
+    <div class="auth-logo">📊</div>
+    <h1>نظام تقييم المراسلين</h1>
+    <p>ديوان FM — قسم الأخبار</p>
+    <div id="authError" class="error-msg"></div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">تسجيل الدخول</button>
+      <button class="auth-tab" onclick="switchAuthTab('register')">حساب جديد</button>
+    </div>
+    <!-- Login -->
+    <div id="loginForm">
+      <div class="form-group">
+        <label>البريد الإلكتروني</label>
+        <input type="email" id="loginEmail" placeholder="example@diwanfm.com">
+      </div>
+      <div class="form-group">
+        <label>كلمة المرور</label>
+        <input type="password" id="loginPassword" placeholder="••••••••">
+      </div>
+      <button class="btn btn-primary" onclick="doLogin()">دخول</button>
+    </div>
+    <!-- Register -->
+    <div id="registerForm" style="display:none">
+      <div class="form-group">
+        <label>الاسم الكامل</label>
+        <input type="text" id="regName" placeholder="الاسم كما يظهر في النظام">
+      </div>
+      <div class="form-group">
+        <label>البريد الإلكتروني</label>
+        <input type="email" id="regEmail" placeholder="example@diwanfm.com">
+      </div>
+      <div class="form-group">
+        <label>كلمة المرور</label>
+        <input type="password" id="regPassword" placeholder="••••••••">
+      </div>
+      <div class="form-group">
+        <label>رمز الانضمام</label>
+        <input type="text" id="regCode" placeholder="أدخل رمز الفريق">
+      </div>
+      <button class="btn btn-primary" onclick="doRegister()">إنشاء الحساب</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== APP SCREEN ===== -->
+<div id="appScreen" style="display:none;flex-direction:column">
+  <div class="topbar">
+    <div class="topbar-brand">📊 تقييم المراسلين — ديوان FM</div>
+    <div class="topbar-user">
+      <span class="user-badge" id="userBadge">المستخدم</span>
+      <button class="btn-logout" onclick="doLogout()">خروج</button>
+    </div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('home')">🏠 الرئيسية</button>
+    <button class="nav-tab" onclick="showPage('evaluate')">✍️ تقييم شهري</button>
+    <button class="nav-tab" onclick="showPage('results')">📈 النتائج</button>
+    <button class="nav-tab" id="adminTabBtn" onclick="showPage('admin')" style="display:none">⚙️ الإدارة</button>
+  </div>
+  <div class="app-content">
+
+    <!-- HOME PAGE -->
+    <div id="homePage" class="page active">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="statReporters">0</div>
+          <div class="stat-label">مراسل مسجل</div>
         </div>
-
-        <!-- Main Content -->
-        <div class="main-content">
-            <div class="header">
-                <h2 id="pageTitle">نظام تقييم المراسلين</h2>
-            </div>
-
-            <div class="content">
-                <!-- Home Page -->
-                <div id="home" class="page active">
-                    <div class="grid">
-                        <div class="stat-card">
-                            <div class="stat-label">إجمالي المراسلين</div>
-                            <div class="stat-value" id="totalReporters">0</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">إجمالي التقييمات</div>
-                            <div class="stat-value" id="totalEvaluations">0</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">متوسط الدرجة</div>
-                            <div class="stat-value" id="averageScore">0</div>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-title">مرحباً بك في نظام التقييم</div>
-                        <p>نظام متكامل لتقييم وتتبع أداء المراسلين بناءً على 6 معايير محددة:</p>
-                        <ul style="margin: 15px 0 0 20px; line-height: 2;">
-                            <li>السرعة (20%)</li>
-                            <li>الدقة (25%)</li>
-                            <li>الحضور الصوتي (15%)</li>
-                            <li>القيمة المضافة (15%)</li>
-                            <li>الالتزام والتنسيق (15%)</li>
-                            <li>المبادرة والتفاعل (10%)</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Reporters Page -->
-                <div id="reporters" class="page">
-                    <div class="card">
-                        <div class="card-title">المراسلون</div>
-                        <button class="btn-primary" onclick="openAddReporterModal()">+ إضافة مراسل جديد</button>
-                        <div id="reportersList"></div>
-                    </div>
-                </div>
-
-                <!-- Evaluation Page -->
-                <div id="evaluation" class="page">
-                    <div class="card">
-                        <div class="card-title">نموذج التقييم</div>
-                        <form onsubmit="submitEvaluation(event)">
-                            <div class="form-group">
-                                <label>اختر المراسل:</label>
-                                <select id="reporterSelect" required>
-                                    <option value="">-- اختر مراسلاً --</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label>السرعة (0-20)</label>
-                                <div class="slider-container">
-                                    <input type="range" id="speedScore" min="0" max="20" value="0" oninput="updateScores()">
-                                    <span class="slider-value"><span id="speedValue">0</span>/20</span>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label>الدقة (0-25)</label>
-                                <div class="slider-container">
-                                    <input type="range" id="accuracyScore" min="0" max="25" value="0" oninput="updateScores()">
-                                    <span class="slider-value"><span id="accuracyValue">0</span>/25</span>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label>الحضور الصوتي (0-15)</label>
-                                <div class="slider-container">
-                                    <input type="range" id="voiceScore" min="0" max="15" value="0" oninput="updateScores()">
-                                    <span class="slider-value"><span id="voiceValue">0</span>/15</span>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label>القيمة المضافة (0-15)</label>
-                                <div class="slider-container">
-                                    <input type="range" id="valueScore" min="0" max="15" value="0" oninput="updateScores()">
-                                    <span class="slider-value"><span id="valueValue">0</span>/15</span>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label>الالتزام والتنسيق (0-15)</label>
-                                <div class="slider-container">
-                                    <input type="range" id="engagementScore" min="0" max="15" value="0" oninput="updateScores()">
-                                    <span class="slider-value"><span id="engagementValue">0</span>/15</span>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label>المبادرة والتفاعل (0-10)</label>
-                                <div class="slider-container">
-                                    <input type="range" id="initiativeScore" min="0" max="10" value="0" oninput="updateScores()">
-                                    <span class="slider-value"><span id="initiativeValue">0</span>/10</span>
-                                </div>
-                            </div>
-
-                            <div class="score-display">
-                                <div class="score-value"><span id="totalScore">0</span> <span class="score-max">/ 100</span></div>
-                                <div class="score-classification" id="classification">-</div>
-                            </div>
-
-                            <div class="form-group">
-                                <label>ملاحظات:</label>
-                                <textarea id="notes" placeholder="أضف أي ملاحظات..."></textarea>
-                            </div>
-
-                            <button type="submit" class="btn-primary">حفظ التقييم</button>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Dashboard Page -->
-                <div id="dashboard" class="page">
-                    <div class="card">
-                        <div class="card-title">لوحة التحكم</div>
-                        <div id="dashboardContent"></div>
-                    </div>
-                </div>
-            </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statEvals">0</div>
+          <div class="stat-label">تقييم هذا الشهر</div>
         </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statMyEvals">0</div>
+          <div class="stat-label">تقييماتي هذا الشهر</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statAvg">—</div>
+          <div class="stat-label">متوسط المراسلين</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">🏆 أفضل المراسلين هذا الشهر</div></div>
+        <div id="topReportersList"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">ℹ️ معايير التقييم</div></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px">
+          <div class="detail-crit"><div class="detail-crit-name">السرعة والاستجابة</div><div class="detail-crit-score" style="font-size:1.1rem">من 10 × 20%</div></div>
+          <div class="detail-crit"><div class="detail-crit-name">الدقة والمصداقية</div><div class="detail-crit-score" style="font-size:1.1rem">من 10 × 25%</div></div>
+          <div class="detail-crit"><div class="detail-crit-name">الصوت والحضور</div><div class="detail-crit-score" style="font-size:1.1rem">من 10 × 15%</div></div>
+          <div class="detail-crit"><div class="detail-crit-name">القيمة المضافة</div><div class="detail-crit-score" style="font-size:1.1rem">من 10 × 15%</div></div>
+          <div class="detail-crit"><div class="detail-crit-name">التفاعل والتواصل</div><div class="detail-crit-score" style="font-size:1.1rem">من 10 × 15%</div></div>
+          <div class="detail-crit"><div class="detail-crit-name">المبادرة والإبداع</div><div class="detail-crit-score" style="font-size:1.1rem">من 10 × 10%</div></div>
+        </div>
+      </div>
     </div>
 
-    <!-- Add Reporter Modal -->
-    <div id="addReporterModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">إضافة مراسل جديد</div>
-            <form onsubmit="addReporter(event)">
-                <div class="form-group">
-                    <label>اسم المراسل:</label>
-                    <input type="text" id="reporterName" required>
-                </div>
-                <div class="form-group">
-                    <label>الوصف (اختياري):</label>
-                    <textarea id="reporterDescription"></textarea>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn-secondary" onclick="closeModal('addReporterModal')">إلغاء</button>
-                    <button type="submit" class="btn-primary">إضافة</button>
-                </div>
-            </form>
+    <!-- EVALUATE PAGE -->
+    <div id="evaluatePage" class="page">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">✍️ تقييم شهري للمراسلين</div>
         </div>
+        <div class="month-selector">
+          <label>📅 الشهر:</label>
+          <input type="month" id="evalMonth">
+          <span style="color:var(--muted);font-size:0.85rem" id="monthProgress"></span>
+        </div>
+        <p style="color:var(--muted);font-size:0.88rem;margin-bottom:16px">اختر مراسلاً لبدء أو تعديل تقييمه. التقييم الشهري يسمح بتقييم واحد فقط لكل مراسل.</p>
+        <div class="reporters-grid" id="reportersEvalGrid"></div>
+      </div>
+
+      <!-- Criteria Form -->
+      <div class="card criteria-form" id="criteriaFormCard">
+        <div class="card-header">
+          <div class="card-title" id="criteriaFormTitle">تقييم: ...</div>
+          <button class="btn btn-secondary" onclick="closeCriteriaForm()" style="padding:6px 14px;font-size:0.85rem">✕ إغلاق</button>
+        </div>
+        <div id="criteriaBlocks"></div>
+        <div class="total-display">
+          <div style="font-size:0.9rem;color:var(--muted);margin-bottom:4px">النتيجة الإجمالية</div>
+          <div class="total-number" id="liveTotal">0</div>
+          <div style="font-size:0.8rem;color:var(--muted)">/100</div>
+          <div class="total-class" id="liveClass"></div>
+        </div>
+        <div style="display:flex;gap:12px;justify-content:flex-end">
+          <button class="btn btn-secondary" onclick="closeCriteriaForm()">إلغاء</button>
+          <button class="btn btn-primary" onclick="submitEvaluation()" style="width:auto;padding:10px 28px">💾 حفظ التقييم</button>
+        </div>
+      </div>
     </div>
 
-    <script>
-        // Data Storage
-        let reporters = JSON.parse(localStorage.getItem('reporters')) || [];
-        let evaluations = JSON.parse(localStorage.getItem('evaluations')) || [];
+    <!-- RESULTS PAGE -->
+    <div id="resultsPage" class="page">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📈 نتائج التقييمات</div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <input type="month" id="resultsMonth" onchange="renderResults()" style="border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-family:'Cairo',sans-serif">
+          </div>
+        </div>
+        <div id="resultsTable"></div>
+      </div>
+    </div>
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            updateUI();
-        });
+    <!-- ADMIN PAGE -->
+    <div id="adminPage" class="page">
+      <div class="admin-notice">⚠️ هذه الصفحة خاصة بمدير النظام فقط.</div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">👥 المراسلون</div>
+          <button class="btn btn-primary" onclick="openAddReporter()" style="width:auto;padding:8px 18px">+ إضافة مراسل</button>
+        </div>
+        <div class="reporters-manage-list" id="reportersManageList"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🔑 رمز الانضمام للفريق</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <input type="text" id="joinCodeDisplay" readonly style="flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:'Cairo',sans-serif;font-weight:700;font-size:1.1rem;color:var(--primary)">
+          <button class="btn btn-secondary" onclick="copyJoinCode()" style="white-space:nowrap">📋 نسخ</button>
+        </div>
+        <p style="color:var(--muted);font-size:0.82rem;margin-top:8px">شارك هذا الرمز مع أعضاء الفريق عند إنشاء حساباتهم</p>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">👤 المستخدمون المسجلون</div></div>
+        <div id="usersList"></div>
+      </div>
+    </div>
 
-        // Page Navigation
-        function showPage(pageName) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(pageName).classList.add('active');
+  </div>
+</div>
 
-            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-            event.target.classList.add('active');
+<!-- Modal: Add Reporter -->
+<div class="modal-overlay" id="addReporterModal">
+  <div class="modal">
+    <div class="modal-title">➕ إضافة مراسل جديد</div>
+    <div class="form-group">
+      <label>الاسم الكامل</label>
+      <input type="text" id="newReporterName" placeholder="اسم المراسل">
+    </div>
+    <div class="form-group">
+      <label>المنطقة / المحطة</label>
+      <input type="text" id="newReporterRegion" placeholder="مثال: صفاقس، تونس العاصمة...">
+    </div>
+    <div class="form-group">
+      <label>ملاحظات</label>
+      <textarea id="newReporterNotes" class="justification" placeholder="أي معلومات إضافية..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('addReporterModal')">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveReporter()" style="width:auto">حفظ</button>
+    </div>
+  </div>
+</div>
 
-            const titles = {
-                'home': 'نظام تقييم المراسلين',
-                'reporters': 'المراسلون',
-                'evaluation': 'نموذج التقييم',
-                'dashboard': 'لوحة التحكم'
-            };
-            document.getElementById('pageTitle').textContent = titles[pageName];
+<!-- Modal: Eval Detail -->
+<div class="modal-overlay" id="evalDetailModal">
+  <div class="modal" style="max-width:680px">
+    <div class="modal-title" id="evalDetailTitle">تفاصيل التقييمات</div>
+    <div id="evalDetailContent"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('evalDetailModal')">إغلاق</button>
+    </div>
+  </div>
+</div>
 
-            if (pageName === 'dashboard') {
-                updateDashboard();
-            } else if (pageName === 'reporters') {
-                updateReportersList();
-            }
-        }
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, collection, query, where, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-        // Modal Functions
-        function openAddReporterModal() {
-            document.getElementById('addReporterModal').classList.add('active');
-        }
+// ========== FIREBASE CONFIG ==========
+// ⚠️ ضع هنا إعدادات Firebase الخاصة بمشروعك
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
 
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.remove('active');
-        }
+const JOIN_CODE = "DIWANFM2026"; // رمز الانضمام للفريق — يمكن تغييره
 
-        // Reporter Functions
-        function addReporter(event) {
-            event.preventDefault();
-            const name = document.getElementById('reporterName').value;
-            const description = document.getElementById('reporterDescription').value;
+// ========== CRITERIA ==========
+const CRITERIA = [
+  {id:"speed",  name:"السرعة والاستجابة", weight:20},
+  {id:"accuracy",name:"الدقة والمصداقية",  weight:25},
+  {id:"voice",  name:"الصوت والحضور",     weight:15},
+  {id:"value",  name:"القيمة المضافة",     weight:15},
+  {id:"engage", name:"التفاعل والتواصل",   weight:15},
+  {id:"init",   name:"المبادرة والإبداع",  weight:10},
+];
 
-            const reporter = {
-                id: Date.now(),
-                name,
-                description,
-                createdAt: new Date().toISOString()
-            };
+// ========== INIT ==========
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
 
-            reporters.push(reporter);
-            localStorage.setItem('reporters', JSON.stringify(reporters));
+let currentUser = null;
+let currentUserData = null;
+let selectedReporterId = null;
+let scores = {};
+let justifications = {};
 
-            document.getElementById('reporterName').value = '';
-            document.getElementById('reporterDescription').value = '';
-            closeModal('addReporterModal');
-            updateReportersList();
-            updateReporterSelect();
-            updateUI();
-        }
+// ========== AUTH STATE ==========
+onAuthStateChanged(auth, async user => {
+  if(user){
+    currentUser = user;
+    const snap = await getDoc(doc(db,"users",user.uid));
+    currentUserData = snap.data();
+    document.getElementById("userBadge").textContent = currentUserData?.name || user.email;
+    if(currentUserData?.role === "admin") document.getElementById("adminTabBtn").style.display = "block";
+    document.getElementById("authScreen").style.display = "none";
+    document.getElementById("appScreen").style.display = "flex";
+    // set default months
+    const now = new Date();
+    const ym = now.toISOString().slice(0,7);
+    document.getElementById("evalMonth").value = ym;
+    document.getElementById("resultsMonth").value = ym;
+    loadHome();
+    loadEvaluatePage();
+  } else {
+    currentUser = null;
+    document.getElementById("authScreen").style.display = "flex";
+    document.getElementById("appScreen").style.display = "none";
+  }
+});
 
-        function deleteReporter(id) {
-            if (confirm('هل أنت متأكد من حذف هذا المراسل؟')) {
-                reporters = reporters.filter(r => r.id !== id);
-                evaluations = evaluations.filter(e => e.reporterId !== id);
-                localStorage.setItem('reporters', JSON.stringify(reporters));
-                localStorage.setItem('evaluations', JSON.stringify(evaluations));
-                updateReportersList();
-                updateReporterSelect();
-                updateUI();
-            }
-        }
+// ========== AUTH FUNCTIONS ==========
+window.switchAuthTab = (tab) => {
+  document.querySelectorAll(".auth-tab").forEach((t,i)=>t.classList.toggle("active", (i===0&&tab==="login")||(i===1&&tab==="register")));
+  document.getElementById("loginForm").style.display    = tab==="login"    ? "block":"none";
+  document.getElementById("registerForm").style.display = tab==="register" ? "block":"none";
+  document.getElementById("authError").style.display = "none";
+};
 
-        function updateReportersList() {
-            const list = document.getElementById('reportersList');
-            if (reporters.length === 0) {
-                list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👤</div><p>لا توجد مراسلون بعد</p></div>';
-                return;
-            }
+window.doLogin = async () => {
+  const email = document.getElementById("loginEmail").value.trim();
+  const pass  = document.getElementById("loginPassword").value;
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch(e) {
+    showAuthError("البريد أو كلمة المرور غير صحيحة");
+  }
+};
 
-            list.innerHTML = '<div class="grid">' + reporters.map(r => `
-                <div class="card">
-                    <div class="card-title">${r.name}</div>
-                    ${r.description ? `<p>${r.description}</p>` : ''}
-                    <div class="btn-group" style="margin-top: 15px;">
-                        <button class="btn-secondary" onclick="deleteReporter(${r.id})">حذف</button>
-                    </div>
-                </div>
-            `).join('') + '</div>';
-        }
+window.doRegister = async () => {
+  const name  = document.getElementById("regName").value.trim();
+  const email = document.getElementById("regEmail").value.trim();
+  const pass  = document.getElementById("regPassword").value;
+  const code  = document.getElementById("regCode").value.trim();
+  if(!name||!email||!pass){ showAuthError("يرجى تعبئة جميع الحقول"); return; }
+  if(code !== JOIN_CODE){ showAuthError("رمز الانضمام غير صحيح"); return; }
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+    await updateProfile(cred.user, {displayName: name});
+    await setDoc(doc(db,"users",cred.user.uid), {
+      name, email, role:"journalist", createdAt: serverTimestamp()
+    });
+  } catch(e) {
+    showAuthError("حدث خطأ: " + e.message);
+  }
+};
 
-        function updateReporterSelect() {
-            const select = document.getElementById('reporterSelect');
-            select.innerHTML = '<option value="">-- اختر مراسلاً --</option>' +
-                reporters.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
-        }
+window.doLogout = () => signOut(auth);
 
-        // Evaluation Functions
-        function updateScores() {
-            const speed = parseFloat(document.getElementById('speedScore').value);
-            const accuracy = parseFloat(document.getElementById('accuracyScore').value);
-            const voice = parseFloat(document.getElementById('voiceScore').value);
-            const value = parseFloat(document.getElementById('valueScore').value);
-            const engagement = parseFloat(document.getElementById('engagementScore').value);
-            const initiative = parseFloat(document.getElementById('initiativeScore').value);
+function showAuthError(msg){
+  const el = document.getElementById("authError");
+  el.textContent = msg;
+  el.style.display = "block";
+}
 
-            document.getElementById('speedValue').textContent = speed;
-            document.getElementById('accuracyValue').textContent = accuracy;
-            document.getElementById('voiceValue').textContent = voice;
-            document.getElementById('valueValue').textContent = value;
-            document.getElementById('engagementValue').textContent = engagement;
-            document.getElementById('initiativeValue').textContent = initiative;
+// ========== NAVIGATION ==========
+window.showPage = (page) => {
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll(".nav-tab").forEach(t=>t.classList.remove("active"));
+  document.getElementById(page+"Page").classList.add("active");
+  event.target.classList.add("active");
+  if(page==="results") renderResults();
+  if(page==="admin") loadAdmin();
+  if(page==="evaluate") loadEvaluatePage();
+};
 
-            const total = speed + accuracy + voice + value + engagement + initiative;
-            document.getElementById('totalScore').textContent = total.toFixed(1);
+// ========== HOME PAGE ==========
+async function loadHome(){
+  const reporters = await getReporters();
+  const month = document.getElementById("evalMonth").value;
+  const evalsSnap = await getDocs(query(collection(db,"evaluations"),where("month","==",month)));
+  const evals = evalsSnap.docs.map(d=>d.data());
+  const myEvals = evals.filter(e=>e.evaluatorId===currentUser.uid);
+  document.getElementById("statReporters").textContent = reporters.length;
+  document.getElementById("statEvals").textContent = evals.length;
+  document.getElementById("statMyEvals").textContent = myEvals.length;
+  // top reporters
+  const rMap = {};
+  reporters.forEach(r=>rMap[r.id]={name:r.name, scores:[]});
+  evals.forEach(e=>{ if(rMap[e.reporterId]) rMap[e.reporterId].scores.push(e.total); });
+  const ranked = reporters.map(r=>({
+    name:r.name,
+    avg: rMap[r.id]?.scores.length ? (rMap[r.id].scores.reduce((a,b)=>a+b,0)/rMap[r.id].scores.length) : null,
+    count: rMap[r.id]?.scores.length||0
+  })).filter(r=>r.avg!==null).sort((a,b)=>b.avg-a.avg);
+  if(ranked.length){
+    const avg = (evals.reduce((s,e)=>s+e.total,0)/evals.length).toFixed(1);
+    document.getElementById("statAvg").textContent = avg;
+    document.getElementById("topReportersList").innerHTML = ranked.slice(0,5).map((r,i)=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface2);border-radius:10px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:1.3rem">${["🥇","🥈","🥉","4️⃣","5️⃣"][i]}</span>
+          <span style="font-weight:700">${r.name}</span>
+          <span style="font-size:0.78rem;color:var(--muted)">(${r.count} تقييم)</span>
+        </div>
+        <span class="badge ${getBadgeClass(r.avg)}">${r.avg.toFixed(1)}</span>
+      </div>`).join("");
+  } else {
+    document.getElementById("topReportersList").innerHTML = `<div class="empty"><div class="empty-icon">📭</div><h3>لا توجد تقييمات لهذا الشهر بعد</h3></div>`;
+  }
+}
 
-            let classification = '';
-            let color = '';
-            if (total >= 85) {
-                classification = 'ممتاز';
-                color = 'var(--success)';
-            } else if (total >= 60) {
-                classification = 'متوسط';
-                color = 'var(--warning)';
-            } else {
-                classification = 'ضعيف';
-                color = 'var(--danger)';
-            }
+// ========== EVALUATE PAGE ==========
+async function loadEvaluatePage(){
+  if(!currentUser) return;
+  const month = document.getElementById("evalMonth").value;
+  const reporters = await getReporters();
+  const myEvalsSnap = await getDocs(query(collection(db,"evaluations"),where("month","==",month),where("evaluatorId","==",currentUser.uid)));
+  const myEvalIds = new Set(myEvalsSnap.docs.map(d=>d.data().reporterId));
+  document.getElementById("monthProgress").textContent = `(قيّمت ${myEvalIds.size} من ${reporters.length})`;
+  if(!reporters.length){
+    document.getElementById("reportersEvalGrid").innerHTML=`<div class="empty"><div class="empty-icon">👤</div><h3>لا يوجد مراسلون مسجلون بعد</h3><p style="font-size:0.85rem">تواصل مع المدير لإضافة المراسلين</p></div>`;
+    return;
+  }
+  document.getElementById("reportersEvalGrid").innerHTML = reporters.map(r=>`
+    <div class="reporter-card ${myEvalIds.has(r.id)?'evaluated':''}" onclick="selectReporter('${r.id}','${r.name.replace(/'/g,"\'")}',${myEvalIds.has(r.id)})">
+      <div class="reporter-name">${r.name}</div>
+      <div style="font-size:0.82rem;color:var(--muted)">${r.region||""}</div>
+      <span class="reporter-status ${myEvalIds.has(r.id)?'status-done':'status-pending'}">${myEvalIds.has(r.id)?'✅ تم التقييم':'⏳ لم يقيَّم بعد'}</span>
+    </div>`).join("");
+}
 
-            const classElement = document.getElementById('classification');
-            classElement.textContent = classification;
-            classElement.style.color = color;
-        }
+document.getElementById("evalMonth").addEventListener("change",()=>{loadEvaluatePage();loadHome();});
 
-        function submitEvaluation(event) {
-            event.preventDefault();
-            const reporterId = parseInt(document.getElementById('reporterSelect').value);
-            if (!reporterId) {
-                alert('الرجاء اختيار مراسل');
-                return;
-            }
+window.selectReporter = async (id, name, alreadyEval) => {
+  selectedReporterId = id;
+  document.getElementById("criteriaFormTitle").textContent = `تقييم: ${name}`;
+  scores = {}; justifications = {};
+  // load existing if editing
+  if(alreadyEval){
+    const month = document.getElementById("evalMonth").value;
+    const snap = await getDocs(query(collection(db,"evaluations"),where("month","==",month),where("evaluatorId","==",currentUser.uid),where("reporterId","==",id)));
+    if(!snap.empty){
+      const data = snap.docs[0].data();
+      scores = {...data.scores};
+      justifications = {...data.justifications};
+    }
+  }
+  renderCriteriaForm();
+  document.getElementById("criteriaFormCard").classList.add("active");
+  document.getElementById("criteriaFormCard").scrollIntoView({behavior:"smooth"});
+};
 
-            const evaluation = {
-                id: Date.now(),
-                reporterId,
-                speedScore: parseFloat(document.getElementById('speedScore').value),
-                accuracyScore: parseFloat(document.getElementById('accuracyScore').value),
-                voicePresenceScore: parseFloat(document.getElementById('voiceScore').value),
-                addedValueScore: parseFloat(document.getElementById('valueScore').value),
-                engagementScore: parseFloat(document.getElementById('engagementScore').value),
-                initiativeScore: parseFloat(document.getElementById('initiativeScore').value),
-                totalScore: parseFloat(document.getElementById('totalScore').textContent),
-                notes: document.getElementById('notes').value,
-                evaluatedAt: new Date().toISOString()
-            };
+function renderCriteriaForm(){
+  document.getElementById("criteriaBlocks").innerHTML = CRITERIA.map(c=>`
+    <div class="criterion-block">
+      <div class="criterion-header">
+        <span class="criterion-name">${c.name}</span>
+        <span class="criterion-weight">وزن ${c.weight}%</span>
+      </div>
+      <div class="score-row">
+        <span class="score-label">العلامة:</span>
+        <div class="score-inputs">
+          ${[1,2,3,4,5,6,7,8,9,10].map(n=>`<button class="score-btn ${scores[c.id]===n?'selected':''}" onclick="setScore('${c.id}',${n},this)">${n}</button>`).join("")}
+        </div>
+      </div>
+      <textarea class="justification" placeholder="تعليل إلزامي لهذا المعيار..." onchange="setJustification('${c.id}',this.value)">${justifications[c.id]||""}</textarea>
+    </div>`).join("");
+  updateTotal();
+}
 
-            evaluations.push(evaluation);
-            localStorage.setItem('evaluations', JSON.stringify(evaluations));
+window.setScore = (id, val, btn) => {
+  scores[id] = val;
+  btn.closest(".score-inputs").querySelectorAll(".score-btn").forEach(b=>b.classList.remove("selected"));
+  btn.classList.add("selected");
+  updateTotal();
+};
 
-            // Reset form
-            document.getElementById('speedScore').value = 0;
-            document.getElementById('accuracyScore').value = 0;
-            document.getElementById('voiceScore').value = 0;
-            document.getElementById('valueScore').value = 0;
-            document.getElementById('engagementScore').value = 0;
-            document.getElementById('initiativeScore').value = 0;
-            document.getElementById('notes').value = '';
-            updateScores();
+window.setJustification = (id, val) => { justifications[id] = val; };
 
-            alert('تم حفظ التقييم بنجاح!');
-            updateUI();
-        }
+function updateTotal(){
+  let total = 0;
+  CRITERIA.forEach(c=>{ if(scores[c.id]) total += (scores[c.id]/10)*c.weight; });
+  document.getElementById("liveTotal").textContent = total.toFixed(1);
+  document.getElementById("liveClass").textContent = getClass(total);
+  document.getElementById("liveClass").style.color = total>=85?"var(--success)":total>=60?"var(--warning)":"var(--danger)";
+}
 
-        // Dashboard
-        function updateDashboard() {
-            const content = document.getElementById('dashboardContent');
+window.closeCriteriaForm = () => {
+  document.getElementById("criteriaFormCard").classList.remove("active");
+  selectedReporterId = null;
+};
 
-            if (evaluations.length === 0) {
-                content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📊</div><p>لا توجد تقييمات بعد</p></div>';
-                return;
-            }
+window.submitEvaluation = async () => {
+  // validate
+  const missing = CRITERIA.filter(c=>!scores[c.id]);
+  if(missing.length){ alert("يرجى إدخال علامة لجميع المعايير:
+"+missing.map(c=>c.name).join("
+")); return; }
+  const emptyJustify = CRITERIA.filter(c=>!justifications[c.id]?.trim());
+  if(emptyJustify.length){ alert("يرجى كتابة تعليل لجميع المعايير:
+"+emptyJustify.map(c=>c.name).join("
+")); return; }
+  const month = document.getElementById("evalMonth").value;
+  let total = 0;
+  CRITERIA.forEach(c=>{ total += (scores[c.id]/10)*c.weight; });
+  // check existing
+  const snap = await getDocs(query(collection(db,"evaluations"),where("month","==",month),where("evaluatorId","==",currentUser.uid),where("reporterId","==",selectedReporterId)));
+  const evalData = {
+    month, reporterId: selectedReporterId, evaluatorId: currentUser.uid,
+    evaluatorName: currentUserData?.name || currentUser.email,
+    scores:{...scores}, justifications:{...justifications},
+    total: parseFloat(total.toFixed(2)),
+    classification: getClass(total),
+    updatedAt: serverTimestamp()
+  };
+  if(!snap.empty){
+    await updateDoc(doc(db,"evaluations",snap.docs[0].id), evalData);
+  } else {
+    evalData.createdAt = serverTimestamp();
+    await addDoc(collection(db,"evaluations"), evalData);
+  }
+  alert("✅ تم حفظ التقييم بنجاح!");
+  closeCriteriaForm();
+  loadEvaluatePage();
+  loadHome();
+};
 
-            // Calculate stats
-            const stats = reporters.map(r => {
-                const rEvals = evaluations.filter(e => e.reporterId === r.id);
-                const avgScore = rEvals.length > 0 
-                    ? rEvals.reduce((sum, e) => sum + e.totalScore, 0) / rEvals.length 
-                    : 0;
-                const classification = avgScore >= 85 ? 'ممتاز' : avgScore >= 60 ? 'متوسط' : 'ضعيف';
-                return { name: r.name, avgScore: avgScore.toFixed(2), count: rEvals.length, classification };
-            }).sort((a, b) => b.avgScore - a.avgScore);
+// ========== RESULTS PAGE ==========
+window.renderResults = async () => {
+  const month = document.getElementById("resultsMonth").value;
+  const reporters = await getReporters();
+  const evalsSnap = await getDocs(query(collection(db,"evaluations"),where("month","==",month)));
+  const evals = evalsSnap.docs.map(d=>({id:d.id,...d.data()}));
+  if(!reporters.length||!evals.length){
+    document.getElementById("resultsTable").innerHTML=`<div class="empty"><div class="empty-icon">📭</div><h3>لا توجد نتائج لهذا الشهر</h3></div>`;
+    return;
+  }
+  const rows = reporters.map(r=>{
+    const rEvals = evals.filter(e=>e.reporterId===r.id);
+    if(!rEvals.length) return {name:r.name,region:r.region||"",avg:null,count:0,id:r.id};
+    const avg = rEvals.reduce((s,e)=>s+e.total,0)/rEvals.length;
+    return {name:r.name,region:r.region||"",avg:parseFloat(avg.toFixed(2)),count:rEvals.length,id:r.id};
+  }).sort((a,b)=>(b.avg||0)-(a.avg||0));
+  document.getElementById("resultsTable").innerHTML=`
+    <table>
+      <thead><tr><th>#</th><th>المراسل</th><th>المنطقة</th><th>المتوسط النهائي</th><th>عدد المقيمين</th><th>التقييم</th><th></th></tr></thead>
+      <tbody>${rows.map((r,i)=>`<tr>
+        <td>${i+1}</td>
+        <td><strong>${r.name}</strong></td>
+        <td>${r.region}</td>
+        <td>${r.avg!==null?`<strong style="color:var(--primary);font-size:1.1rem">${r.avg}</strong>`:"—"}</td>
+        <td>${r.count||"—"}</td>
+        <td>${r.avg!==null?`<span class="badge ${getBadgeClass(r.avg)}">${getClass(r.avg)}</span>`:"—"}</td>
+        <td>${r.avg!==null?`<button class="btn btn-secondary" onclick="showEvalDetail('${r.id}','${r.name.replace(/'/g,"\'")}','${month}')" style="padding:4px 12px;font-size:0.8rem">تفاصيل</button>`:"—"}</td>
+      </tr>`).join("")}</tbody>
+    </table>`;
+};
 
-            const badgeClass = (classification) => {
-                if (classification === 'ممتاز') return 'badge-excellent';
-                if (classification === 'متوسط') return 'badge-average';
-                return 'badge-poor';
-            };
+window.showEvalDetail = async (reporterId, reporterName, month) => {
+  const evalsSnap = await getDocs(query(collection(db,"evaluations"),where("month","==",month),where("reporterId","==",reporterId)));
+  const evals = evalsSnap.docs.map(d=>d.data());
+  document.getElementById("evalDetailTitle").textContent = `تفاصيل تقييمات: ${reporterName} — ${month}`;
+  document.getElementById("evalDetailContent").innerHTML = evals.map(e=>`
+    <div class="eval-list-item">
+      <div class="eval-list-header">
+        <strong>${e.evaluatorName}</strong>
+        <span class="badge ${getBadgeClass(e.total)}">${e.total}/100</span>
+      </div>
+      <div class="detail-criteria">
+        ${CRITERIA.map(c=>`
+          <div class="detail-crit">
+            <div class="detail-crit-name">${c.name}</div>
+            <div class="detail-crit-score">${e.scores[c.id]||0}<span style="font-size:0.7rem;color:var(--muted)">/10</span></div>
+            <div class="detail-crit-justify">${e.justifications[c.id]||"—"}</div>
+          </div>`).join("")}
+      </div>
+    </div>`).join("");
+  document.getElementById("evalDetailModal").classList.add("active");
+};
 
-            content.innerHTML = '<table><thead><tr><th>الترتيب</th><th>المراسل</th><th>متوسط الدرجة</th><th>التصنيف</th><th>عدد التقييمات</th></tr></thead><tbody>' +
-                stats.map((s, i) => `
-                    <tr>
-                        <td>${i + 1}</td>
-                        <td>${s.name}</td>
-                        <td>${s.avgScore}</td>
-                        <td><span class="badge ${badgeClass(s.classification)}">${s.classification}</span></td>
-                        <td>${s.count}</td>
-                    </tr>
-                `).join('') +
-                '</tbody></table>';
-        }
+// ========== ADMIN PAGE ==========
+async function loadAdmin(){
+  const reporters = await getReporters();
+  document.getElementById("joinCodeDisplay").value = JOIN_CODE;
+  document.getElementById("reportersManageList").innerHTML = reporters.length
+    ? reporters.map(r=>`
+        <div class="reporter-item">
+          <div><div class="reporter-item-name">${r.name}</div><div class="reporter-item-role">${r.region||""}</div></div>
+          <button class="btn btn-danger" onclick="deleteReporter('${r.id}')" style="padding:6px 14px;font-size:0.82rem">حذف</button>
+        </div>`).join("")
+    : `<div class="empty"><div class="empty-icon">👤</div><h3>لا يوجد مراسلون بعد</h3></div>`;
+  const usersSnap = await getDocs(collection(db,"users"));
+  document.getElementById("usersList").innerHTML = usersSnap.docs.map(d=>{
+    const u=d.data();
+    return `<div class="reporter-item"><div><div class="reporter-item-name">${u.name}</div><div class="reporter-item-role">${u.email} — ${u.role==="admin"?"مدير":"صحفي"}</div></div></div>`;
+  }).join("");
+}
 
-        // Update UI
-        function updateUI() {
-            document.getElementById('totalReporters').textContent = reporters.length;
-            document.getElementById('totalEvaluations').textContent = evaluations.length;
+window.openAddReporter = () => document.getElementById("addReporterModal").classList.add("active");
+window.closeModal = (id) => document.getElementById(id).classList.remove("active");
 
-            if (evaluations.length > 0) {
-                const avgScore = (evaluations.reduce((sum, e) => sum + e.totalScore, 0) / evaluations.length).toFixed(1);
-                document.getElementById('averageScore').textContent = avgScore;
-            }
+window.saveReporter = async () => {
+  const name = document.getElementById("newReporterName").value.trim();
+  const region = document.getElementById("newReporterRegion").value.trim();
+  const notes = document.getElementById("newReporterNotes").value.trim();
+  if(!name){ alert("يرجى إدخال اسم المراسل"); return; }
+  await addDoc(collection(db,"reporters"),{name,region,notes,createdAt:serverTimestamp()});
+  document.getElementById("newReporterName").value="";
+  document.getElementById("newReporterRegion").value="";
+  document.getElementById("newReporterNotes").value="";
+  closeModal("addReporterModal");
+  loadAdmin();
+  loadEvaluatePage();
+};
 
-            updateReporterSelect();
-        }
-    </script>
+window.deleteReporter = async (id) => {
+  if(!confirm("هل أنت متأكد من حذف هذا المراسل؟ سيتم حذف جميع تقييماته أيضاً.")) return;
+  await deleteDoc(doc(db,"reporters",id));
+  const snap = await getDocs(query(collection(db,"evaluations"),where("reporterId","==",id)));
+  for(const d of snap.docs) await deleteDoc(d.ref);
+  loadAdmin();
+  loadEvaluatePage();
+};
+
+window.copyJoinCode = () => {
+  navigator.clipboard.writeText(JOIN_CODE);
+  alert("✅ تم نسخ رمز الانضمام");
+};
+
+// ========== HELPERS ==========
+async function getReporters(){
+  const snap = await getDocs(collection(db,"reporters"));
+  return snap.docs.map(d=>({id:d.id,...d.data()}));
+}
+
+function getClass(score){
+  if(score>=85) return "ممتاز";
+  if(score>=70) return "جيد جداً";
+  if(score>=60) return "جيد";
+  if(score>=50) return "مقبول";
+  return "ضعيف";
+}
+
+function getBadgeClass(score){
+  if(score>=85) return "badge-excellent";
+  if(score>=70) return "badge-good";
+  if(score>=60) return "badge-average";
+  return "badge-poor";
+}
+
+// Close modals on overlay click
+document.querySelectorAll(".modal-overlay").forEach(m=>{
+  m.addEventListener("click",e=>{ if(e.target===m) m.classList.remove("active"); });
+});
+</script>
 </body>
 </html>
