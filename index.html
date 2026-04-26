@@ -770,7 +770,16 @@ window.deleteReporter = async (id) => {
   loadEvaluatePage();
 };
 
-window.copyJoinCode = () => {
+
+        window.deleteUser = async function(uid) {
+            if (!currentUserData || currentUserData.role !== 'admin') return;
+            if (!confirm('هل تريد حذف هذا المستخدم؟')) return;
+            await deleteDoc(doc(db, 'users', uid));
+            alert('تم حذف المستخدم');
+            loadAdmin();
+        };
+    
+        window.copyJoinCode = () => {
   navigator.clipboard.writeText(JOIN_CODE);
   alert("✅ تم نسخ رمز الانضمام");
 };
