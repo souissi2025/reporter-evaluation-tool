@@ -775,10 +775,9 @@ window.deleteReporter = async (id) => {
             if (!currentUserData || currentUserData.role !== 'admin') return;
             if (!confirm('هل تريد حذف هذا المستخدم؟')) return;
             await deleteDoc(doc(db, 'users', uid));
-            alert('تم حذف المستخدم');
-            loadAdmin();
+            await loadAdmin();
         };
-    
+
         window.copyJoinCode = () => {
   navigator.clipboard.writeText(JOIN_CODE);
   alert("✅ تم نسخ رمز الانضمام");
