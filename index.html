@@ -367,6 +367,22 @@ tr:hover td{background:var(--surface2)}
         <div class="card-header"><div class="card-title">👤 المستخدمون المسجلون</div></div>
         <div id="usersList"></div>
       </div>
+
+      <!-- ===== جميع التقييمات ===== -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📋 جميع التقييمات</div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <label style="font-size:0.85rem;font-weight:600;color:var(--muted)">الشهر:</label>
+            <input type="month" id="adminEvalsMonth" onchange="loadAllEvals()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:'Cairo',sans-serif;font-size:0.88rem;color:var(--primary);font-weight:700">
+            <label style="font-size:0.85rem;font-weight:600;color:var(--muted)">المراسل:</label>
+            <select id="adminEvalsReporterFilter" onchange="loadAllEvals()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:'Cairo',sans-serif;font-size:0.88rem;min-width:160px">
+              <option value="">الكل</option>
+            </select>
+          </div>
+        </div>
+        <div id="allEvalsList"></div>
+      </div>
     </div>
 
   </div>
@@ -775,7 +791,6 @@ async function loadAdmin(){
 
   const usersSnap = await getDocs(collection(db,"users"));
   const users = usersSnap.docs.map(d=>({uid:d.id,...d.data()}));
-  // تحديد أول أدمين (الأقدم) لمنع حذفه
   const adminUsers = users.filter(u=>u.role==="admin").sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
   const firstAdminUid = adminUsers[0]?.uid;
 
@@ -795,7 +810,96 @@ async function loadAdmin(){
       ${actionBtn}
     </div>`;
   }).join("");
+
+  // ===== تهيئة قسم جميع التقييمات =====
+  const now = new Date();
+  const ym = now.toISOString().slice(0,7);
+  const adminMonthEl = document.getElementById("adminEvalsMonth");
+  if(!adminMonthEl.value) adminMonthEl.value = ym;
+
+  // تعبئة فلتر المراسلين
+  const filterSel = document.getElementById("adminEvalsReporterFilter");
+  const prevVal = filterSel.value;
+  filterSel.innerHTML = '<option value="">الكل</option>' +
+    reporters.map(r=>`<option value="${r.id}">${r.name}</option>`).join("");
+  if(prevVal) filterSel.value = prevVal;
+
+  loadAllEvals();
 }
+
+// ========== جميع التقييمات (للأدمين) ==========
+window.loadAllEvals = async function(){
+  const month = document.getElementById("adminEvalsMonth").value;
+  const reporterFilter = document.getElementById("adminEvalsReporterFilter").value;
+  const reporters = await getReporters();
+  const reporterMap = {};
+  reporters.forEach(r=>reporterMap[r.id]=r);
+
+  let q = query(collection(db,"evaluations"), where("month","==",month));
+  const snap = await getDocs(q);
+  let evals = snap.docs.map(d=>({id:d.id,...d.data()}));
+
+  if(reporterFilter) evals = evals.filter(e=>e.reporterId===reporterFilter);
+
+  const container = document.getElementById("allEvalsList");
+  if(!evals.length){
+    container.innerHTML=`<div class="empty"><div class="empty-icon">📭</div><h3>لا توجد تقييمات لهذا الشهر</h3></div>`;
+    return;
+  }
+
+  // ترتيب: المراسل ثم اسم المقيّم
+  evals.sort((a,b)=>{
+    const ra = reporterMap[a.reporterId]?.name||"";
+    const rb = reporterMap[b.reporterId]?.name||"";
+    return ra.localeCompare(rb,"ar") || (a.evaluatorName||"").localeCompare(b.evaluatorName||"","ar");
+  });
+
+  // تجميع حسب المراسل
+  const groups = {};
+  evals.forEach(e=>{
+    if(!groups[e.reporterId]) groups[e.reporterId]=[];
+    groups[e.reporterId].push(e);
+  });
+
+  container.innerHTML = Object.entries(groups).map(([repId, repEvals])=>{
+    const repName = reporterMap[repId]?.name || "مراسل غير معروف";
+    const repRegion = reporterMap[repId]?.region || "";
+    const avg = (repEvals.reduce((s,e)=>s+e.total,0)/repEvals.length).toFixed(1);
+    return `
+      <div style="margin-bottom:18px;border:1.5px solid var(--border);border-radius:12px;overflow:hidden">
+        <div style="background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;padding:12px 18px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <span style="font-weight:700;font-size:1rem">${repName}</span>
+            ${repRegion?`<span style="opacity:0.8;font-size:0.82rem;margin-right:8px">— ${repRegion}</span>`:""}
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="background:rgba(255,255,255,0.2);padding:3px 12px;border-radius:20px;font-size:0.82rem">${repEvals.length} مقيّم</span>
+            <span style="background:rgba(255,255,255,0.9);color:var(--primary);padding:3px 14px;border-radius:20px;font-weight:900;font-size:0.95rem">متوسط: ${avg}</span>
+            <button onclick="showEvalDetail('${repId}','${repName.replace(/'/g,"\\'")}','${month}')" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.4);color:white;padding:4px 12px;border-radius:8px;cursor:pointer;font-family:Cairo,sans-serif;font-size:0.8rem;font-weight:600">🔍 تفاصيل</button>
+          </div>
+        </div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr style="background:var(--surface2)">
+              <th style="padding:9px 14px;text-align:right;font-size:0.82rem;border-bottom:1.5px solid var(--border)">المقيّم</th>
+              ${CRITERIA.map(c=>`<th style="padding:9px 10px;text-align:center;font-size:0.78rem;border-bottom:1.5px solid var(--border);color:var(--muted)">${c.name}</th>`).join("")}
+              <th style="padding:9px 14px;text-align:center;font-size:0.82rem;border-bottom:1.5px solid var(--border)">المجموع</th>
+              <th style="padding:9px 14px;text-align:center;font-size:0.82rem;border-bottom:1.5px solid var(--border)">التصنيف</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${repEvals.map(e=>`
+              <tr>
+                <td style="padding:9px 14px;font-size:0.85rem;font-weight:600">${e.evaluatorName||"—"}</td>
+                ${CRITERIA.map(c=>`<td style="padding:9px 10px;text-align:center;font-size:0.88rem;font-weight:700;color:${(e.scores?.[c.id]||0)>=7?"var(--success)":(e.scores?.[c.id]||0)>=5?"var(--warning)":"var(--danger)"}">${e.scores?.[c.id]||"—"}</td>`).join("")}
+                <td style="padding:9px 14px;text-align:center"><strong style="color:var(--primary);font-size:1rem">${e.total}</strong></td>
+                <td style="padding:9px 14px;text-align:center"><span class="badge ${getBadgeClass(e.total)}">${getClass(e.total)}</span></td>
+              </tr>`).join("")}
+          </tbody>
+        </table>
+      </div>`;
+  }).join("");
+};
 
 window.openAddReporter = () => document.getElementById("addReporterModal").classList.add("active");
 window.closeModal = (id) => document.getElementById(id).classList.remove("active");
