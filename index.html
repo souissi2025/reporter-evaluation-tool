@@ -466,6 +466,12 @@ onAuthStateChanged(auth, async user => {
   if(user){
     currentUser = user;
     const snap = await getDoc(doc(db,"users",user.uid));
+    // إن لم يُعثر على بيانات المستخدم في Firestore (محذوف) → إخراج فوري
+    if(!snap.exists()){
+      await signOut(auth);
+      showAuthError("تم حذف حسابك من النظام. تواصل مع المدير.");
+      return;
+    }
     currentUserData = snap.data();
     document.getElementById("userBadge").textContent = currentUserData?.name || user.email;
     if(currentUserData?.role === "admin") document.getElementById("adminTabBtn").style.display = "block";
@@ -938,8 +944,12 @@ window.deleteReporter = async (id) => {
                 alert("⛔ لا يمكن حذف المدير الرئيسي للنظام.");
                 return;
             }
-            if (!confirm(`هل تريد حذف المستخدم "${name}"؟\nلا يمكن التراجع عن هذا الإجراء.`)) return;
+            if (!confirm(`هل تريد حذف المستخدم "${name}"؟\nسيتم حذف حسابه وجميع تقييماته.\nلا يمكن التراجع عن هذا الإجراء.`)) return;
+            // حذف وثيقة المستخدم من Firestore (يمنعه من الدخول فوراً)
             await deleteDoc(doc(db, 'users', uid));
+            // حذف جميع التقييمات التي أجراها هذا المستخدم
+            const evalSnap = await getDocs(query(collection(db,"evaluations"), where("evaluatorId","==", uid)));
+            for(const d of evalSnap.docs) await deleteDoc(d.ref);
             await loadAdmin();
         };
 
