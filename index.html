@@ -536,10 +536,10 @@ async function loadHome(){
   document.getElementById("statMyEvals").textContent = myEvals.length;
   // top reporters
   const rMap = {};
-  reporters.forEach(r=>rMap[r.id]={name:fixGarbled(r.name), scores:[]});
+  reporters.forEach(r=>rMap[r.id]={name:r.name, scores:[]});
   evals.forEach(e=>{ if(rMap[e.reporterId]) rMap[e.reporterId].scores.push(e.total); });
   const ranked = reporters.map(r=>({
-    name:fixGarbled(r.name),
+    name:r.name,
     avg: rMap[r.id]?.scores.length ? (rMap[r.id].scores.reduce((a,b)=>a+b,0)/rMap[r.id].scores.length) : null,
     count: rMap[r.id]?.scores.length||0
   })).filter(r=>r.avg!==null).sort((a,b)=>b.avg-a.avg);
@@ -550,7 +550,7 @@ async function loadHome(){
       <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface2);border-radius:10px;margin-bottom:8px">
         <div style="display:flex;align-items:center;gap:12px">
           <span style="font-size:1.3rem">${["🥇","🥈","🥉","4️⃣","5️⃣"][i]}</span>
-          <span style="font-weight:700">${fixGarbled(r.name)}</span>
+          <span style="font-weight:700">${r.name}</span>
           <span style="font-size:0.78rem;color:var(--muted)">(${r.count} تقييم)</span>
         </div>
         <span class="badge ${getBadgeClass(r.avg)}">${r.avg.toFixed(1)}</span>
@@ -573,8 +573,8 @@ async function loadEvaluatePage(){
     return;
   }
   document.getElementById("reportersEvalGrid").innerHTML = reporters.map(r=>`
-    <div class="reporter-card ${myEvalIds.has(r.id)?'evaluated':''}" onclick="selectReporter('${r.id}','${fixGarbled(r.name).replace(/'/g,"\'")}',${myEvalIds.has(r.id)})">
-      <div class="reporter-name">${fixGarbled(r.name)}</div>
+    <div class="reporter-card ${myEvalIds.has(r.id)?'evaluated':''}" onclick="selectReporter('${r.id}','${r.name.replace(/'/g,"\'")}',${myEvalIds.has(r.id)})">
+      <div class="reporter-name">${r.name}</div>
       <div style="font-size:0.82rem;color:var(--muted)">${r.region||""}</div>
       <span class="reporter-status ${myEvalIds.has(r.id)?'status-done':'status-pending'}">${myEvalIds.has(r.id)?'✅ تم التقييم':'⏳ لم يقيَّم بعد'}</span>
     </div>`).join("");
@@ -684,22 +684,22 @@ window.renderResults = async () => {
   }
   const rows = reporters.map(r=>{
     const rEvals = evals.filter(e=>e.reporterId===r.id);
-    if(!rEvals.length) return {name:fixGarbled(r.name),region:r.region||"",avg:null,count:0,id:r.id};
+    if(!rEvals.length) return {name:r.name,region:r.region||"",avg:null,count:0,id:r.id};
     const avg = rEvals.reduce((s,e)=>s+e.total,0)/rEvals.length;
-    return {name:fixGarbled(r.name),region:r.region||"",avg:parseFloat(avg.toFixed(2)),count:rEvals.length,id:r.id};
+    return {name:r.name,region:r.region||"",avg:parseFloat(avg.toFixed(2)),count:rEvals.length,id:r.id};
   }).sort((a,b)=>(b.avg||0)-(a.avg||0));
   document.getElementById("resultsTable").innerHTML=`
     <table>
       <thead><tr><th>#</th><th>المراسل</th><th>المنطقة</th><th>المتوسط النهائي</th><th>عدد المقيمين</th><th>التقييم</th><th></th></tr></thead>
       <tbody>${rows.map((r,i)=>`<tr>
         <td>${i+1}</td>
-        <td><strong>${fixGarbled(r.name)}</strong></td>
+        <td><strong>${r.name}</strong></td>
         <td>${r.region}</td>
         <td>${r.avg!==null?`<strong style="color:var(--primary);font-size:1.1rem">${r.avg}</strong>`:"—"}</td>
         <td>${r.count||"—"}</td>
         <td>${r.avg!==null?`<span class="badge ${getBadgeClass(r.avg)}">${getClass(r.avg)}</span>`:"—"}</td>
-        <td>${r.avg!==null?`<button class="btn btn-secondary" onclick="showEvalDetail('${r.id}','${fixGarbled(r.name).replace(/'/g,"\'")}','${month}')" style="padding:4px 12px;font-size:0.8rem">🔍 تفاصيل</button>
-          <button style="background:#dc2626;color:white;border:none;border-radius:8px;padding:4px 10px;font-size:0.8rem;cursor:pointer;font-family:Cairo,sans-serif;font-weight:600;margin-right:4px" onclick="exportReporterPDF('${r.id}','${fixGarbled(r.name)}','${month}')">📄 PDF</button>`:"—"}</td>
+        <td>${r.avg!==null?`<button class="btn btn-secondary" onclick="showEvalDetail('${r.id}','${r.name.replace(/'/g,"\'")}','${month}')" style="padding:4px 12px;font-size:0.8rem">🔍 تفاصيل</button>
+          <button style="background:#dc2626;color:white;border:none;border-radius:8px;padding:4px 10px;font-size:0.8rem;cursor:pointer;font-family:Cairo,sans-serif;font-weight:600;margin-right:4px" onclick="exportReporterPDF('${r.id}','${r.name}','${month}')">📄 PDF</button>`:"—"}</td>
       </tr>`).join("")}</tbody>
     </table>`;
 };
@@ -733,7 +733,7 @@ async function loadAdmin(){
   document.getElementById("reportersManageList").innerHTML = reporters.length
     ? reporters.map(r=>`
         <div class="reporter-item">
-          <div><div class="reporter-item-name">${fixGarbled(r.name)}</div><div class="reporter-item-role">${r.region||""}</div></div>
+          <div><div class="reporter-item-name">${r.name}</div><div class="reporter-item-role">${r.region||""}</div></div>
           <button class="btn btn-danger" onclick="deleteReporter('${r.id}')" style="padding:6px 14px;font-size:0.82rem">حذف</button>
         </div>`).join("")
     : `<div class="empty"><div class="empty-icon">👤</div><h3>لا يوجد مراسلون بعد</h3></div>`;
@@ -812,7 +812,7 @@ async function populateChartSelect(){
   const sel = document.getElementById('chartReporterSelect');
   const current = sel.value;
   sel.innerHTML = '<option value="">-- اختر مراسلاً --</option>' +
-    reporters.map(r=>`<option value="${r.id}" data-name="${fixGarbled(r.name)}">${fixGarbled(r.name)}</option>`).join('');
+    reporters.map(r=>`<option value="${r.id}" data-name="${r.name}">${r.name}</option>`).join('');
   if(current) sel.value = current;
 }
 
@@ -965,7 +965,7 @@ window.exportPDF = async () => {
     if(!rEvals.length) return null;
     const avg = (rEvals.reduce((s,e)=>s+e.total,0)/rEvals.length).toFixed(1);
     const cls = parseFloat(avg)>=85?'Excellent':parseFloat(avg)>=70?'Very Good':parseFloat(avg)>=60?'Good':parseFloat(avg)>=50?'Average':'Weak';
-    return [i+1, fixGarbled(r.name), r.region||'—', avg+'/100', rEvals.length, cls];
+    return [i+1, r.name, r.region||'—', avg+'/100', rEvals.length, cls];
   }).filter(Boolean);
 
   doc.autoTable({
@@ -992,7 +992,7 @@ window.exportPDF = async () => {
     doc.setTextColor(13,148,136);
     doc.setFontSize(12);
     doc.setFont('helvetica','bold');
-    doc.text(reportefixGarbled(r.name) + (reporter.region ? ` — ${reporter.region}` : ''), 15, yPos);
+    doc.text(reporter.name + (reporter.region ? ` — ${reporter.region}` : ''), 15, yPos);
 
     const avg = (rEvals.reduce((s,e)=>s+e.total,0)/rEvals.length).toFixed(1);
     doc.setTextColor(100,100,100);
