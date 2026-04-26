@@ -451,15 +451,15 @@ onAuthStateChanged(auth, async user => {
     currentUser = user;
     const snap = await getDoc(doc(db,"users",user.uid));
     currentUserData = snap.data();
-    document.getElementById("userBadge").textContent = currentUserData?.name || user.email;
+    document.getElementById("userBadge").textContent = fixGarbled(currentUserData?.name || user.email);
     if(currentUserData?.role === "admin") document.getElementById("adminTabBtn").style.display = "block";
     document.getElementById("authScreen").style.display = "none";
     document.getElementById("appScreen").style.display = "flex";
     // set default months
     const now = new Date();
     const ym = now.toISOString().slice(0,7);
-    document.getElementById("evalMonth").value = ym;
-    document.getElementById("resultsMonth").value = ym;
+    document.getElementById("evalMonth").value = fixGarbled(ym);
+    document.getElementById("resultsMonth").value = fixGarbled(ym);
     loadHome();
     loadEvaluatePage();
   } else {
@@ -509,7 +509,7 @@ window.doLogout = () => signOut(auth);
 
 function showAuthError(msg){
   const el = document.getElementById("authError");
-  el.textContent = msg;
+  el.textContent = fixGarbled(msg);
   el.style.display = "block";
 }
 
@@ -531,9 +531,9 @@ async function loadHome(){
   const evalsSnap = await getDocs(query(collection(db,"evaluations"),where("month","==",month)));
   const evals = evalsSnap.docs.map(d=>d.data());
   const myEvals = evals.filter(e=>e.evaluatorId===currentUser.uid);
-  document.getElementById("statReporters").textContent = reporters.length;
-  document.getElementById("statEvals").textContent = evals.length;
-  document.getElementById("statMyEvals").textContent = myEvals.length;
+  document.getElementById("statReporters").textContent = fixGarbled(reporters.length);
+  document.getElementById("statEvals").textContent = fixGarbled(evals.length);
+  document.getElementById("statMyEvals").textContent = fixGarbled(myEvals.length);
   // top reporters
   const rMap = {};
   reporters.forEach(r=>rMap[r.id]={name:r.name, scores:[]});
@@ -545,7 +545,7 @@ async function loadHome(){
   })).filter(r=>r.avg!==null).sort((a,b)=>b.avg-a.avg);
   if(ranked.length){
     const avg = (evals.reduce((s,e)=>s+e.total,0)/evals.length).toFixed(1);
-    document.getElementById("statAvg").textContent = avg;
+    document.getElementById("statAvg").textContent = fixGarbled(avg);
     document.getElementById("topReportersList").innerHTML = ranked.slice(0,5).map((r,i)=>`
       <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface2);border-radius:10px;margin-bottom:8px">
         <div style="display:flex;align-items:center;gap:12px">
@@ -567,7 +567,7 @@ async function loadEvaluatePage(){
   const reporters = await getReporters();
   const myEvalsSnap = await getDocs(query(collection(db,"evaluations"),where("month","==",month),where("evaluatorId","==",currentUser.uid)));
   const myEvalIds = new Set(myEvalsSnap.docs.map(d=>d.data().reporterId));
-  document.getElementById("monthProgress").textContent = `(قيّمت ${myEvalIds.size} من ${reporters.length})`;
+  document.getElementById("monthProgress").textContent = fixGarbled(`(قيّمت ${myEvalIds.size} من ${reporters.length})`);
   if(!reporters.length){
     document.getElementById("reportersEvalGrid").innerHTML=`<div class="empty"><div class="empty-icon">👤</div><h3>لا يوجد مراسلون مسجلون بعد</h3><p style="font-size:0.85rem">تواصل مع المدير لإضافة المراسلين</p></div>`;
     return;
@@ -584,7 +584,7 @@ document.getElementById("evalMonth").addEventListener("change",()=>{loadEvaluate
 
 window.selectReporter = async (id, name, alreadyEval) => {
   selectedReporterId = id;
-  document.getElementById("criteriaFormTitle").textContent = `تقييم: ${name}`;
+  document.getElementById("criteriaFormTitle").textContent = fixGarbled(`تقييم: ${name}`);
   scores = {}; justifications = {};
   // load existing if editing
   if(alreadyEval){
@@ -631,8 +631,8 @@ window.setJustification = (id, val) => { justifications[id] = val; };
 function updateTotal(){
   let total = 0;
   CRITERIA.forEach(c=>{ if(scores[c.id]) total += (scores[c.id]/10)*c.weight; });
-  document.getElementById("liveTotal").textContent = total.toFixed(1);
-  document.getElementById("liveClass").textContent = getClass(total);
+  document.getElementById("liveTotal").textContent = fixGarbled(total.toFixed(1));
+  document.getElementById("liveClass").textContent = fixGarbled(getClass(total));
   document.getElementById("liveClass").style.color = total>=85?"var(--success)":total>=60?"var(--warning)":"var(--danger)";
 }
 
@@ -707,7 +707,7 @@ window.renderResults = async () => {
 window.showEvalDetail = async (reporterId, reporterName, month) => {
   const evalsSnap = await getDocs(query(collection(db,"evaluations"),where("month","==",month),where("reporterId","==",reporterId)));
   const evals = evalsSnap.docs.map(d=>d.data());
-  document.getElementById("evalDetailTitle").textContent = `تفاصيل تقييمات: ${reporterName} — ${month}`;
+  document.getElementById("evalDetailTitle").textContent = fixGarbled(`تفاصيل تقييمات: ${reporterName} — ${month}`);
   document.getElementById("evalDetailContent").innerHTML = evals.map(e=>`
     <div class="eval-list-item">
       <div class="eval-list-header">
@@ -729,7 +729,7 @@ window.showEvalDetail = async (reporterId, reporterName, month) => {
 // ========== ADMIN PAGE ==========
 async function loadAdmin(){
   const reporters = await getReporters();
-  document.getElementById("joinCodeDisplay").value = JOIN_CODE;
+  document.getElementById("joinCodeDisplay").value = fixGarbled(JOIN_CODE);
   document.getElementById("reportersManageList").innerHTML = reporters.length
     ? reporters.map(r=>`
         <div class="reporter-item">
@@ -753,9 +753,9 @@ window.saveReporter = async () => {
   const notes = document.getElementById("newReporterNotes").value.trim();
   if(!name){ alert("يرجى إدخال اسم المراسل"); return; }
   await addDoc(collection(db,"reporters"),{name,region,notes,createdAt:serverTimestamp()});
-  document.getElementById("newReporterName").value="";
-  document.getElementById("newReporterRegion").value="";
-  document.getElementById("newReporterNotes").value="";
+  document.getElementById("newReporterName").value=fixGarbled("");
+  document.getElementById("newReporterRegion").value=fixGarbled("");
+  document.getElementById("newReporterNotes").value=fixGarbled("");
   closeModal("addReporterModal");
   loadAdmin();
   loadEvaluatePage();
@@ -813,7 +813,7 @@ async function populateChartSelect(){
   const current = sel.value;
   sel.innerHTML = '<option value="">-- اختر مراسلاً --</option>' +
     reporters.map(r=>`<option value="${r.id}" data-name="${r.name}">${r.name}</option>`).join('');
-  if(current) sel.value = current;
+  if(current) sel.value = fixGarbled(current);
 }
 
 // ========== RENDER EVOLUTION CHART ==========
