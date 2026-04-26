@@ -676,32 +676,67 @@ window.submitEvaluation = async () => {
 window.renderResults = async () => {
   const month = document.getElementById("resultsMonth").value;
   const reporters = await getReporters();
-  const evalsSnap = await getDocs(query(collection(db,"evaluations"),where("month","==",month)));
-  const evals = evalsSnap.docs.map(d=>({id:d.id,...d.data()}));
-  if(!reporters.length||!evals.length){
-    document.getElementById("resultsTable").innerHTML=`<div class="empty"><div class="empty-icon">📭</div><h3>لا توجد نتائج لهذا الشهر</h3></div>`;
-    return;
+  const isAdmin = currentUserData?.role === "admin";
+
+  if(isAdmin){
+    // ===== عرض الأدمين: كل التقييمات مع زر التفاصيل =====
+    const evalsSnap = await getDocs(query(collection(db,"evaluations"),where("month","==",month)));
+    const evals = evalsSnap.docs.map(d=>({id:d.id,...d.data()}));
+    if(!reporters.length||!evals.length){
+      document.getElementById("resultsTable").innerHTML=`<div class="empty"><div class="empty-icon">📭</div><h3>لا توجد نتائج لهذا الشهر</h3></div>`;
+      return;
+    }
+    const rows = reporters.map(r=>{
+      const rEvals = evals.filter(e=>e.reporterId===r.id);
+      if(!rEvals.length) return {name:r.name,region:r.region||"",avg:null,count:0,id:r.id};
+      const avg = rEvals.reduce((s,e)=>s+e.total,0)/rEvals.length;
+      return {name:r.name,region:r.region||"",avg:parseFloat(avg.toFixed(2)),count:rEvals.length,id:r.id};
+    }).sort((a,b)=>(b.avg||0)-(a.avg||0));
+    document.getElementById("resultsTable").innerHTML=`
+      <table>
+        <thead><tr><th>#</th><th>المراسل</th><th>المنطقة</th><th>المتوسط النهائي</th><th>عدد المقيمين</th><th>التقييم</th><th></th></tr></thead>
+        <tbody>${rows.map((r,i)=>`<tr>
+          <td>${i+1}</td>
+          <td><strong>${r.name}</strong></td>
+          <td>${r.region}</td>
+          <td>${r.avg!==null?`<strong style="color:var(--primary);font-size:1.1rem">${r.avg}</strong>`:"—"}</td>
+          <td>${r.count||"—"}</td>
+          <td>${r.avg!==null?`<span class="badge ${getBadgeClass(r.avg)}">${getClass(r.avg)}</span>`:"—"}</td>
+          <td>${r.avg!==null?`<button class="btn btn-secondary" onclick="showEvalDetail('${r.id}','${r.name.replace(/'/g,"\'")}','${month}')" style="padding:4px 12px;font-size:0.8rem">🔍 تفاصيل</button>
+            <button style="background:#dc2626;color:white;border:none;border-radius:8px;padding:4px 10px;font-size:0.8rem;cursor:pointer;font-family:Cairo,sans-serif;font-weight:600;margin-right:4px" onclick="exportReporterPDF('${r.id}','${r.name}','${month}')">📄 PDF</button>`:"—"}</td>
+        </tr>`).join("")}</tbody>
+      </table>`;
+  } else {
+    // ===== عرض الصحفي: تقييماته الشخصية فقط بدون تفاصيل =====
+    const myEvalsSnap = await getDocs(query(collection(db,"evaluations"),where("month","==",month),where("evaluatorId","==",currentUser.uid)));
+    const myEvals = myEvalsSnap.docs.map(d=>({id:d.id,...d.data()}));
+    if(!myEvals.length){
+      document.getElementById("resultsTable").innerHTML=`<div class="empty"><div class="empty-icon">📭</div><h3>لم تُنجز أي تقييم هذا الشهر بعد</h3><p style="font-size:0.85rem;margin-top:6px">اذهب إلى صفحة "تقييم شهري" لبدء التقييم</p></div>`;
+      return;
+    }
+    const reporterMap = {};
+    reporters.forEach(r=>reporterMap[r.id]=r);
+    const rows = myEvals.map(e=>({
+      name: reporterMap[e.reporterId]?.name || "—",
+      region: reporterMap[e.reporterId]?.region || "",
+      score: e.total,
+      id: e.reporterId
+    })).sort((a,b)=>b.score-a.score);
+    document.getElementById("resultsTable").innerHTML=`
+      <div style="background:#fef3c7;border:1.5px solid #f59e0b;border-radius:10px;padding:10px 16px;font-size:0.85rem;color:#92400e;margin-bottom:16px">
+        📋 يعرض هذا الجدول تقييماتك الشخصية فقط. التفاصيل الكاملة والمقارنات متاحة للإدارة حصراً.
+      </div>
+      <table>
+        <thead><tr><th>#</th><th>المراسل</th><th>المنطقة</th><th>تقييمي الشخصي</th><th>التصنيف</th></tr></thead>
+        <tbody>${rows.map((r,i)=>`<tr>
+          <td>${i+1}</td>
+          <td><strong>${r.name}</strong></td>
+          <td>${r.region}</td>
+          <td><strong style="color:var(--primary);font-size:1.1rem">${r.score}</strong></td>
+          <td><span class="badge ${getBadgeClass(r.score)}">${getClass(r.score)}</span></td>
+        </tr>`).join("")}</tbody>
+      </table>`;
   }
-  const rows = reporters.map(r=>{
-    const rEvals = evals.filter(e=>e.reporterId===r.id);
-    if(!rEvals.length) return {name:r.name,region:r.region||"",avg:null,count:0,id:r.id};
-    const avg = rEvals.reduce((s,e)=>s+e.total,0)/rEvals.length;
-    return {name:r.name,region:r.region||"",avg:parseFloat(avg.toFixed(2)),count:rEvals.length,id:r.id};
-  }).sort((a,b)=>(b.avg||0)-(a.avg||0));
-  document.getElementById("resultsTable").innerHTML=`
-    <table>
-      <thead><tr><th>#</th><th>المراسل</th><th>المنطقة</th><th>المتوسط النهائي</th><th>عدد المقيمين</th><th>التقييم</th><th></th></tr></thead>
-      <tbody>${rows.map((r,i)=>`<tr>
-        <td>${i+1}</td>
-        <td><strong>${r.name}</strong></td>
-        <td>${r.region}</td>
-        <td>${r.avg!==null?`<strong style="color:var(--primary);font-size:1.1rem">${r.avg}</strong>`:"—"}</td>
-        <td>${r.count||"—"}</td>
-        <td>${r.avg!==null?`<span class="badge ${getBadgeClass(r.avg)}">${getClass(r.avg)}</span>`:"—"}</td>
-        <td>${r.avg!==null?`<button class="btn btn-secondary" onclick="showEvalDetail('${r.id}','${r.name.replace(/'/g,"\'")}','${month}')" style="padding:4px 12px;font-size:0.8rem">🔍 تفاصيل</button>
-          <button style="background:#dc2626;color:white;border:none;border-radius:8px;padding:4px 10px;font-size:0.8rem;cursor:pointer;font-family:Cairo,sans-serif;font-weight:600;margin-right:4px" onclick="exportReporterPDF('${r.id}','${r.name}','${month}')">📄 PDF</button>`:"—"}</td>
-      </tr>`).join("")}</tbody>
-    </table>`;
 };
 
 window.showEvalDetail = async (reporterId, reporterName, month) => {
@@ -737,10 +772,28 @@ async function loadAdmin(){
           <button class="btn btn-danger" onclick="deleteReporter('${r.id}')" style="padding:6px 14px;font-size:0.82rem">حذف</button>
         </div>`).join("")
     : `<div class="empty"><div class="empty-icon">👤</div><h3>لا يوجد مراسلون بعد</h3></div>`;
+
   const usersSnap = await getDocs(collection(db,"users"));
-  document.getElementById("usersList").innerHTML = usersSnap.docs.map(d=>{
-    const u=d.data();
-    return `<div class="reporter-item"><div><div class="reporter-item-name">${u.name}</div><div class="reporter-item-role">${u.email} — ${u.role==="admin"?"مدير":"صحفي"}</div></div></div>`;
+  const users = usersSnap.docs.map(d=>({uid:d.id,...d.data()}));
+  // تحديد أول أدمين (الأقدم) لمنع حذفه
+  const adminUsers = users.filter(u=>u.role==="admin").sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
+  const firstAdminUid = adminUsers[0]?.uid;
+
+  document.getElementById("usersList").innerHTML = users.map(u=>{
+    const isFirstAdmin = u.uid === firstAdminUid;
+    let actionBtn = "";
+    if(u.role !== "admin"){
+      actionBtn = `<button class="btn btn-danger" onclick="deleteUser('${u.uid}','${u.name.replace(/'/g,"\\'")}')" style="padding:6px 14px;font-size:0.82rem">🗑️ حذف</button>`;
+    } else if(isFirstAdmin){
+      actionBtn = `<span style="font-size:0.78rem;background:#d1fae5;color:#065f46;padding:4px 10px;border-radius:20px;font-weight:700">المدير الرئيسي</span>`;
+    }
+    return `<div class="reporter-item">
+      <div>
+        <div class="reporter-item-name">${u.name}</div>
+        <div class="reporter-item-role">${u.email} — ${u.role==="admin"?"مدير 🔑":"صحفي"}</div>
+      </div>
+      ${actionBtn}
+    </div>`;
   }).join("");
 }
 
@@ -771,9 +824,17 @@ window.deleteReporter = async (id) => {
 };
 
 
-        window.deleteUser = async function(uid) {
+        window.deleteUser = async function(uid, name) {
             if (!currentUserData || currentUserData.role !== 'admin') return;
-            if (!confirm('هل تريد حذف هذا المستخدم؟')) return;
+            // التحقق من أنه ليس المدير الأول
+            const usersSnap2 = await getDocs(collection(db,"users"));
+            const allUsers = usersSnap2.docs.map(d=>({uid:d.id,...d.data()}));
+            const adminUsers2 = allUsers.filter(u=>u.role==="admin").sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
+            if(adminUsers2[0]?.uid === uid){
+                alert("⛔ لا يمكن حذف المدير الرئيسي للنظام.");
+                return;
+            }
+            if (!confirm(`هل تريد حذف المستخدم "${name}"؟\nلا يمكن التراجع عن هذا الإجراء.`)) return;
             await deleteDoc(doc(db, 'users', uid));
             await loadAdmin();
         };
