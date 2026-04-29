@@ -307,7 +307,7 @@ tr:hover td{background:var(--surface2)}
           <div class="card-title">📈 نتائج التقييمات</div>
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
             <input type="month" id="resultsMonth" onchange="renderResults()" style="border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-family:'Cairo',sans-serif">
-            <button class="btn-pdf" onclick="exportPDF()">📄 تصدير PDF</button>
+            <button id="exportPdfBtn" class="btn-pdf" onclick="exportPDF()" style="display:none">📄 تصدير PDF الشامل</button>
           </div>
         </div>
         <div id="resultsTable"></div>
@@ -475,7 +475,10 @@ onAuthStateChanged(auth, async user => {
     }
     currentUserData = snap.data();
     document.getElementById("userBadge").textContent = currentUserData?.name || user.email;
-    if(currentUserData?.role === "admin") document.getElementById("adminTabBtn").style.display = "block";
+    if(currentUserData?.role === "admin"){
+      document.getElementById("adminTabBtn").style.display = "block";
+      document.getElementById("exportPdfBtn").style.display = "flex";
+    }
     document.getElementById("authScreen").style.display = "none";
     document.getElementById("appScreen").style.display = "flex";
     // set default months
@@ -1117,8 +1120,10 @@ window.renderChart = async () => {
   }
 };
 
-// ========== EXPORT PDF (فريق - مدير) ==========
+// ========== EXPORT PDF الشامل (للإدمين فقط) ==========
 window.exportPDF = async () => {
+  if(currentUserData?.role !== 'admin'){ alert('هذه الميزة متاحة للإدارة فقط'); return; }
+
   const month = document.getElementById('resultsMonth').value;
   const reporters = await getReporters();
   const evalsSnap = await getDocs(query(collection(db,'evaluations'),where('month','==',month)));
@@ -1129,81 +1134,190 @@ window.exportPDF = async () => {
   const monthNamesAr = ['','يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
   const monthLabel = monthNamesAr[parseInt(m)] + ' ' + y;
 
-  const reportersHTML = reporters.map((r, i) => {
-    const rEvals = evals.filter(e=>e.reporterId===r.id);
-    if(!rEvals.length) return '';
-    const avg = (rEvals.reduce((s,e)=>s+e.total,0)/rEvals.length).toFixed(1);
-    const clsObj = parseFloat(avg)>=85?{t:'ممتاز',c:'#065f46',b:'#d1fae5'}:parseFloat(avg)>=70?{t:'جيد جداً',c:'#1e40af',b:'#dbeafe'}:parseFloat(avg)>=60?{t:'جيد',c:'#92400e',b:'#fef3c7'}:parseFloat(avg)>=50?{t:'متوسط',c:'#92400e',b:'#fef3c7'}:{t:'ضعيف',c:'#991b1b',b:'#fee2e2'};
+  // تجميع الصحفيين (المقيّمين) الفريدين
+  const journalistsMap = {};
+  evals.forEach(e => {
+    if(!journalistsMap[e.evaluatorId]) journalistsMap[e.evaluatorId] = { name: e.evaluatorName||'مجهول', evals:[] };
+    journalistsMap[e.evaluatorId].evals.push(e);
+  });
+  const journalists = Object.values(journalistsMap).sort((a,b)=>a.name.localeCompare(b.name,'ar'));
+
+  // خريطة المراسلين
+  const reporterMap = {};
+  reporters.forEach(r=>reporterMap[r.id]=r);
+
+  // دالة لجلب كائن التصنيف
+  const getCls = (v) => parseFloat(v)>=85?{t:'ممتاز',c:'#065f46',b:'#d1fae5'}:parseFloat(v)>=70?{t:'جيد جداً',c:'#1e40af',b:'#dbeafe'}:parseFloat(v)>=60?{t:'جيد',c:'#92400e',b:'#fef3c7'}:parseFloat(v)>=50?{t:'متوسط',c:'#92400e',b:'#fef3c7'}:{t:'ضعيف',c:'#991b1b',b:'#fee2e2'};
+
+  // ===== القسم 1: تقييمات كل صحفي مع ملاحظاته =====
+  const journalistsHTML = journalists.map((j, ji) => {
+    const jEvalsHTML = j.evals.map(e => {
+      const rep = reporterMap[e.reporterId];
+      if(!rep) return '';
+      const criteriaRows = CRITERIA.map((c,ci) => {
+        const score = e.scores?.[c.id] || 0;
+        const justify = e.justifications?.[c.id]?.trim() || '—';
+        const scoreColor = score>=8?'#16a34a':score>=6?'#d97706':'#dc2626';
+        return `<tr style="background:${ci%2===0?'white':'#f8fafc'}">
+          <td style="padding:8px 12px;font-weight:600;color:#334155">${c.name}</td>
+          <td style="padding:8px 12px;text-align:center;font-weight:900;font-size:1.05em;color:${scoreColor}">${score}/10</td>
+          <td style="padding:8px 12px;font-size:0.85em;color:#64748b;line-height:1.6">${justify}</td>
+        </tr>`;
+      }).join('');
+      const cls = getCls(e.total);
+      return `<div style="margin-bottom:14px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">
+        <div style="background:#f1f5f9;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0">
+          <span style="font-weight:700;color:#1e293b">📰 ${rep.name}${rep.region?' <span style="font-weight:400;color:#94a3b8;font-size:0.85em">— '+rep.region+'</span>':''}</span>
+          <span style="background:${cls.b};color:${cls.c};padding:3px 12px;border-radius:20px;font-weight:700;font-size:0.88em">${e.total.toFixed(1)}/100 — ${cls.t}</span>
+        </div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="background:#f8fafc">
+            <th style="padding:8px 12px;text-align:right;font-size:0.82em;color:#64748b;border-bottom:1px solid #e2e8f0;width:22%">المعيار</th>
+            <th style="padding:8px 12px;text-align:center;font-size:0.82em;color:#64748b;border-bottom:1px solid #e2e8f0;width:12%">العلامة</th>
+            <th style="padding:8px 12px;text-align:right;font-size:0.82em;color:#64748b;border-bottom:1px solid #e2e8f0">الملاحظات</th>
+          </tr></thead>
+          <tbody>${criteriaRows}</tbody>
+        </table>
+      </div>`;
+    }).join('');
+
+    return `<div style="margin-bottom:28px;border:2px solid #0d9488;border-radius:12px;overflow:hidden">
+      <div style="background:linear-gradient(135deg,#0d9488,#0f766e);color:white;padding:14px 20px;display:flex;align-items:center;gap:10px">
+        <div style="background:rgba(255,255,255,0.25);width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.95em">${ji+1}</div>
+        <div>
+          <div style="font-weight:900;font-size:1.05em">✍️ ${j.name}</div>
+          <div style="font-size:0.8em;opacity:0.85">${j.evals.length} تقييم مُنجز هذا الشهر</div>
+        </div>
+      </div>
+      <div style="padding:16px 20px">${jEvalsHTML}</div>
+    </div>`;
+  }).join('');
+
+  // ===== القسم 2: النتائج النهائية المجمعة =====
+  const sortedReporters = reporters
+    .map(r => {
+      const rEvals = evals.filter(e=>e.reporterId===r.id);
+      if(!rEvals.length) return null;
+      const avg = (rEvals.reduce((s,e)=>s+e.total,0)/rEvals.length);
+      return {...r, avg: parseFloat(avg.toFixed(1)), count: rEvals.length, rEvals};
+    })
+    .filter(Boolean)
+    .sort((a,b)=>b.avg-a.avg);
+
+  const finalTableRows = sortedReporters.map((r,i) => {
+    const cls = getCls(r.avg);
     return `<tr style="background:${i%2===0?'white':'#f8fafc'}">
-      <td style="padding:10px 14px;text-align:center;color:#64748b">${i+1}</td>
-      <td style="padding:10px 14px;font-weight:700">${r.name}</td>
+      <td style="padding:10px 14px;text-align:center;font-weight:700;color:#0d9488;font-size:1.05em">${i+1}</td>
+      <td style="padding:10px 14px;font-weight:700;color:#1e293b">${r.name}</td>
       <td style="padding:10px 14px;color:#64748b">${r.region||'—'}</td>
-      <td style="padding:10px 14px;text-align:center;font-weight:900;color:#0d9488;font-size:1.1em">${avg}/100</td>
-      <td style="padding:10px 14px;text-align:center;color:#64748b">${rEvals.length}</td>
-      <td style="padding:10px 14px;text-align:center"><span style="background:${clsObj.b};color:${clsObj.c};padding:3px 12px;border-radius:20px;font-size:0.85em;font-weight:700">${clsObj.t}</span></td>
+      <td style="padding:10px 14px;text-align:center;font-weight:900;font-size:1.2em;color:#0d9488">${r.avg}</td>
+      <td style="padding:10px 14px;text-align:center;color:#64748b">${r.count}</td>
+      <td style="padding:10px 14px;text-align:center"><span style="background:${cls.b};color:${cls.c};padding:3px 14px;border-radius:20px;font-weight:700;font-size:0.88em">${cls.t}</span></td>
     </tr>`;
   }).join('');
 
-  const criteriaDetailHTML = reporters.map(r => {
-    const rEvals = evals.filter(e=>e.reporterId===r.id);
-    if(!rEvals.length) return '';
-    const avg = (rEvals.reduce((s,e)=>s+e.total,0)/rEvals.length).toFixed(1);
-    const cRows = CRITERIA.map(c => {
-      const cAvg = (rEvals.reduce((s,e)=>s+(e.scores?.[c.id]||0),0)/rEvals.length).toFixed(1);
+  const criteriaFinalHTML = sortedReporters.map(r => {
+    const cRows = CRITERIA.map((c,ci) => {
+      const cAvg = (r.rEvals.reduce((s,e)=>s+(e.scores?.[c.id]||0),0)/r.rEvals.length).toFixed(1);
       const weighted = ((parseFloat(cAvg)/10)*c.weight).toFixed(1);
-      return `<tr>
+      const trend = parseFloat(cAvg)>=8?{t:'↑ قوي',c:'#16a34a'}:parseFloat(cAvg)>=6?{t:'→ متوسط',c:'#d97706'}:{t:'↓ يحتاج عمل',c:'#dc2626'};
+      return `<tr style="background:${ci%2===0?'white':'#f8fafc'}">
         <td style="padding:8px 12px;font-weight:600">${c.name}</td>
         <td style="padding:8px 12px;text-align:center;font-weight:700;color:#0d9488">${cAvg}/10</td>
         <td style="padding:8px 12px;text-align:center;color:#64748b">${c.weight}%</td>
         <td style="padding:8px 12px;text-align:center;font-weight:700">${weighted}</td>
+        <td style="padding:8px 12px;text-align:center;font-weight:700;color:${trend.c}">${trend.t}</td>
       </tr>`;
     }).join('');
-    return `<div style="margin-bottom:20px;border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden">
-      <div style="background:#f0fdfa;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1.5px solid #0d9488">
-        <span style="font-weight:700;color:#0d9488;font-size:1.05em">${r.name}${r.region?' — '+r.region:''}</span>
-        <span style="font-weight:900;color:#0d9488">${avg}/100 | ${rEvals.length} مقيّم</span>
+    const cls = getCls(r.avg);
+    return `<div style="margin-bottom:18px;border:1.5px solid #e2e8f0;border-radius:10px;overflow:hidden">
+      <div style="background:#f0fdfa;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:1.5px solid #0d9488">
+        <span style="font-weight:700;color:#0d9488;font-size:1.05em">${r.name}${r.region?' — <span style="font-weight:400;font-size:0.88em;color:#64748b">'+r.region+'</span>':''}</span>
+        <div style="display:flex;gap:10px;align-items:center">
+          <span style="font-size:0.82em;color:#64748b">${r.count} مقيّم</span>
+          <span style="font-weight:900;font-size:1.1em;color:#0d9488">${r.avg}/100</span>
+          <span style="background:${cls.b};color:${cls.c};padding:2px 12px;border-radius:20px;font-size:0.82em;font-weight:700">${cls.t}</span>
+        </div>
       </div>
       <table style="width:100%;border-collapse:collapse">
         <thead><tr style="background:#f8fafc">
-          <th style="padding:8px 12px;text-align:right;font-size:0.85em;border-bottom:1px solid #e2e8f0;color:#64748b">المعيار</th>
-          <th style="padding:8px 12px;text-align:center;font-size:0.85em;border-bottom:1px solid #e2e8f0;color:#64748b">العلامة</th>
-          <th style="padding:8px 12px;text-align:center;font-size:0.85em;border-bottom:1px solid #e2e8f0;color:#64748b">الوزن</th>
-          <th style="padding:8px 12px;text-align:center;font-size:0.85em;border-bottom:1px solid #e2e8f0;color:#64748b">النقاط</th>
+          <th style="padding:8px 12px;text-align:right;font-size:0.82em;color:#64748b;border-bottom:1px solid #e2e8f0">المعيار</th>
+          <th style="padding:8px 12px;text-align:center;font-size:0.82em;color:#64748b;border-bottom:1px solid #e2e8f0">المتوسط</th>
+          <th style="padding:8px 12px;text-align:center;font-size:0.82em;color:#64748b;border-bottom:1px solid #e2e8f0">الوزن</th>
+          <th style="padding:8px 12px;text-align:center;font-size:0.82em;color:#64748b;border-bottom:1px solid #e2e8f0">النقاط</th>
+          <th style="padding:8px 12px;text-align:center;font-size:0.82em;color:#64748b;border-bottom:1px solid #e2e8f0">الحالة</th>
         </tr></thead>
         <tbody>${cRows}</tbody>
       </table>
     </div>`;
   }).join('');
 
+  // ===== بناء HTML الكامل =====
   const container = document.createElement('div');
   container.style.cssText = 'width:794px;font-family:Cairo,Arial,sans-serif;direction:rtl;background:white;position:fixed;top:-9999px;left:-9999px;padding:0';
   container.innerHTML = `
-    <div style="background:linear-gradient(135deg,#0d9488,#0f766e);color:white;padding:36px 40px;text-align:center">
-      <div style="font-size:11px;opacity:0.8;margin-bottom:6px;letter-spacing:1px">سري — ديوان FM / قسم الأخبار</div>
-      <div style="font-size:26px;font-weight:900;margin-bottom:6px">تقرير تقييم المراسلين</div>
-      <div style="font-size:15px;opacity:0.9">${monthLabel}</div>
+    <!-- COVER HEADER -->
+    <div style="background:linear-gradient(135deg,#0d9488,#0f766e);color:white;padding:44px 40px;text-align:center">
+      <div style="font-size:11px;opacity:0.75;letter-spacing:2px;margin-bottom:8px">وثيقة سرية — ديوان FM / قسم الأخبار</div>
+      <div style="font-size:30px;font-weight:900;margin-bottom:8px">التقرير الشهري الشامل</div>
+      <div style="font-size:16px;opacity:0.9;margin-bottom:4px">${monthLabel}</div>
+      <div style="margin-top:16px;display:flex;justify-content:center;gap:30px;font-size:0.88em;opacity:0.85">
+        <span>📋 ${journalists.length} صحفي مقيّم</span>
+        <span>🎙️ ${sortedReporters.length} مراسل</span>
+        <span>📊 ${evals.length} تقييم إجمالي</span>
+      </div>
     </div>
-    <div style="padding:30px 36px">
-      <div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid #0d9488">ملخص نتائج المراسلين</div>
-      <table style="width:100%;border-collapse:collapse;margin-bottom:30px">
-        <thead><tr style="background:#0d9488;color:white">
-          <th style="padding:10px 14px;text-align:center;font-weight:700">#</th>
-          <th style="padding:10px 14px;text-align:right;font-weight:700">المراسل</th>
-          <th style="padding:10px 14px;text-align:right;font-weight:700">المنطقة</th>
-          <th style="padding:10px 14px;text-align:center;font-weight:700">النتيجة النهائية</th>
-          <th style="padding:10px 14px;text-align:center;font-weight:700">عدد المقيمين</th>
-          <th style="padding:10px 14px;text-align:center;font-weight:700">التصنيف</th>
+
+    <div style="padding:32px 36px">
+
+      <!-- SECTION 1 -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;padding:12px 18px;background:linear-gradient(135deg,#f0fdfa,#d1fae5);border-radius:10px;border-right:4px solid #0d9488">
+        <div style="font-size:1.5em">✍️</div>
+        <div>
+          <div style="font-size:16px;font-weight:900;color:#0d9488">القسم الأول: تقييمات الصحفيين</div>
+          <div style="font-size:0.82em;color:#64748b;margin-top:2px">تفاصيل كل تقييم مع الملاحظات والمبررات لكل مراسل</div>
+        </div>
+      </div>
+      ${journalistsHTML}
+
+      <!-- SECTION 2 -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;margin-top:8px;padding:12px 18px;background:linear-gradient(135deg,#eff6ff,#dbeafe);border-radius:10px;border-right:4px solid #3b82f6">
+        <div style="font-size:1.5em">🏆</div>
+        <div>
+          <div style="font-size:16px;font-weight:900;color:#1d4ed8">القسم الثاني: النتائج النهائية المجمعة</div>
+          <div style="font-size:0.82em;color:#64748b;margin-top:2px">متوسط نتائج جميع الصحفيين — مرتبة تنازلياً</div>
+        </div>
+      </div>
+
+      <!-- Summary Table -->
+      <table style="width:100%;border-collapse:collapse;margin-bottom:28px;border-radius:10px;overflow:hidden">
+        <thead><tr style="background:#1d4ed8;color:white">
+          <th style="padding:11px 14px;text-align:center;font-weight:700">#</th>
+          <th style="padding:11px 14px;text-align:right;font-weight:700">المراسل</th>
+          <th style="padding:11px 14px;text-align:right;font-weight:700">المنطقة</th>
+          <th style="padding:11px 14px;text-align:center;font-weight:700">المتوسط النهائي</th>
+          <th style="padding:11px 14px;text-align:center;font-weight:700">عدد المقيمين</th>
+          <th style="padding:11px 14px;text-align:center;font-weight:700">التصنيف</th>
         </tr></thead>
-        <tbody>${reportersHTML}</tbody>
+        <tbody>${finalTableRows}</tbody>
       </table>
-      <div style="font-size:14px;font-weight:700;color:#1e293b;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid #0d9488">تفاصيل حسب المراسل</div>
-      ${criteriaDetailHTML}
-      <div style="margin-top:30px;padding-top:16px;border-top:1px solid #e2e8f0;text-align:center;font-size:10px;color:#94a3b8">
-        ديوان FM — وثيقة داخلية سرية — غير مخصصة للتوزيع — ${new Date().toLocaleDateString('ar-TN')}
+
+      <!-- Per Reporter Criteria -->
+      <div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid #3b82f6">تفاصيل المعايير لكل مراسل</div>
+      ${criteriaFinalHTML}
+
+      <!-- Footer -->
+      <div style="margin-top:30px;padding-top:14px;border-top:1px solid #e2e8f0;text-align:center;font-size:10px;color:#94a3b8">
+        ديوان FM — تقرير شامل — للإدارة فقط — سري وغير مخصص للتوزيع — ${new Date().toLocaleDateString('ar-TN')}
       </div>
     </div>`;
 
   document.body.appendChild(container);
+  const btn = document.getElementById('exportPdfBtn');
+  const origText = btn.innerHTML;
+  btn.innerHTML = '⏳ جاري الإنشاء...';
+  btn.disabled = true;
+
   try {
     const canvas = await html2canvas(container, {scale:2,useCORS:true,allowTaint:true,backgroundColor:'#ffffff',logging:false});
     document.body.removeChild(container);
@@ -1219,10 +1333,13 @@ window.exportPDF = async () => {
       doc.addImage(imgData,'JPEG',0,-(imgH-remaining),imgW,imgH);
       remaining -= pageH;
     }
-    doc.save('تقرير-المراسلين-'+monthLabel+'.pdf');
+    doc.save('التقرير-الشامل-'+monthLabel+'.pdf');
   } catch(err) {
     if(document.body.contains(container)) document.body.removeChild(container);
     console.error(err); alert('حدث خطأ أثناء إنشاء PDF');
+  } finally {
+    btn.innerHTML = origText;
+    btn.disabled = false;
   }
 };
 
