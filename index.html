@@ -592,7 +592,7 @@ function showAuthError(msg){
 // ========== NAVIGATION ==========
 window.showPage = (page) => {
   const allowed = page === "home" ||
-    (page === "evaluate" && (currentRole === "journalist" || currentRole === "admin")) ||
+    (page === "evaluate" && canEvaluate()) ||
     (page === "results") ||
     (page === "messages" && (currentRole === "reporter" || currentRole === "admin")) ||
     (page === "admin" && currentRole === "admin");
@@ -612,10 +612,14 @@ function getRoleLabel(role){
   return role === "admin" ? "الإدارة" : role === "reporter" ? "مراسل" : "صحفي";
 }
 
+function canEvaluate(){
+  return currentRole === "journalist" || currentRole === "admin" || currentUserData?.canEvaluate === true;
+}
+
 function applyRoleUI(){
   const isAdmin = currentRole === "admin";
   const isReporter = currentRole === "reporter";
-  document.getElementById("evaluateTabBtn").style.display = isReporter ? "none" : "block";
+  document.getElementById("evaluateTabBtn").style.display = canEvaluate() ? "block" : "none";
   document.getElementById("resultsTabBtn").textContent = isReporter ? "📈 تقييمي" : "📈 تقييماتي";
   document.getElementById("messagesTabBtn").style.display = (isReporter || isAdmin) ? "block" : "none";
   document.getElementById("adminTabBtn").style.display = isAdmin ? "block" : "none";
@@ -682,7 +686,7 @@ async function loadHome(){
 
 // ========== EVALUATE PAGE ==========
 async function loadEvaluatePage(){
-  if(!currentUser || (currentRole !== "journalist" && currentRole !== "admin")) return;
+  if(!currentUser || !canEvaluate()) return;
   const month = document.getElementById("evalMonth").value;
   const reporters = await getReporters();
   const myEvalsSnap = await getDocs(query(collection(db,"evaluations"),where("month","==",month),where("evaluatorId","==",currentUser.uid)));
@@ -762,6 +766,10 @@ window.closeCriteriaForm = () => {
 };
 
 window.submitEvaluation = async () => {
+  if(!canEvaluate()){
+    alert("هذا الحساب لا يملك صلاحية التقييم.");
+    return;
+  }
   // validate
   const missing = CRITERIA.filter(c=>!scores[c.id]);
   if(missing.length){ alert("يرجى إدخال علامة لجميع المعايير:\n"+missing.map(c=>c.name).join("\n")); return; }
@@ -775,6 +783,7 @@ window.submitEvaluation = async () => {
   const evalData = {
     month, reporterId: selectedReporterId, evaluatorId: currentUser.uid,
     evaluatorName: currentUserData?.name || currentUser.email,
+    evaluatorRole: currentRole,
     scores:{...scores}, justifications:{...justifications},
     total: parseFloat(total.toFixed(2)),
     classification: getClass(total),
