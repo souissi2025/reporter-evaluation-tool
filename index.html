@@ -173,42 +173,19 @@ tr:hover td{background:var(--surface2)}
     <p>ديوان FM — قسم الأخبار</p>
     <div id="authError" class="error-msg"></div>
     <div class="auth-tabs">
-      <button class="auth-tab active" onclick="switchAuthTab('login')">تسجيل الدخول</button>
-      <button class="auth-tab" onclick="switchAuthTab('register')">حساب جديد</button>
+      <button class="auth-tab active">تسجيل الدخول</button>
     </div>
-    <!-- Login -->
     <div id="loginForm">
       <div class="form-group">
-        <label>البريد الإلكتروني</label>
-        <input type="email" id="loginEmail" placeholder="example@diwanfm.com">
+        <label>الاسم الكامل</label>
+        <input type="text" id="loginName" placeholder="اكتب اسمك الكامل" autocomplete="username">
       </div>
       <div class="form-group">
-        <label>كلمة المرور</label>
-        <input type="password" id="loginPassword" placeholder="••••••••">
+        <label>كلمة السر</label>
+        <input type="password" id="loginPassword" placeholder="كلمة السر المؤقتة أو الجديدة" autocomplete="current-password">
       </div>
       <button class="btn btn-primary" onclick="doLogin()">دخول</button>
-    </div>
-    <!-- Register -->
-    <div id="registerForm" style="display:none">
-      <div class="form-group">
-        <label>الاسم الكامل</label>
-        <input type="text" id="regName" placeholder="الاسم كما يظهر في النظام">
-      </div>
-      <div class="form-group">
-        <label>البريد الإلكتروني</label>
-        <input type="email" id="regEmail" placeholder="example@diwanfm.com">
-      </div>
-      <div class="form-group">
-        <label>كلمة المرور</label>
-        <input type="password" id="regPassword" placeholder="••••••••">
-      </div>
-      <div class="form-group">
-        <label>كود التسجيل</label>
-        <input type="text" id="regCode" placeholder="أدخل الكود الذي منحته لك الإدارة" autocomplete="off">
-        <p style="color:var(--muted);font-size:.75rem;margin-top:7px;line-height:1.7">الكود يحدد نوع الحساب تلقائياً. لا تحتاج إلى اختيار النوع.</p>
-      </div>
-      <button class="btn btn-primary" onclick="doRegister()">إنشاء الحساب</button>
-      <p style="color:var(--muted);font-size:.75rem;margin-top:12px;line-height:1.7">المراسل يرى تقييماته فقط، والصحفي يقيّم المراسلين ويرى تقييماته الشخصية، والإدارة تملك العرض التجميعي.</p>
+      <p style="color:var(--muted);font-size:.75rem;margin-top:12px;line-height:1.7">الحسابات تُنشأ مسبقاً من الإدارة. عند أول دخول استعمل كلمة السر المؤقتة، ثم غيّرها من زر «تغيير كلمة السر».</p>
     </div>
   </div>
 </div>
@@ -219,6 +196,7 @@ tr:hover td{background:var(--surface2)}
     <div class="topbar-brand">📊 تقييم المراسلين — ديوان FM</div>
     <div class="topbar-user">
       <span class="user-badge" id="userBadge">المستخدم</span>
+      <button class="btn-logout" onclick="changePassword()">تغيير كلمة السر</button>
       <button class="btn-logout" onclick="doLogout()">خروج</button>
     </div>
   </div>
@@ -463,7 +441,7 @@ tr:hover td{background:var(--surface2)}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, updatePassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, deleteField, collection, query, where, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // ========== FIREBASE CONFIG ==========
@@ -502,12 +480,14 @@ let currentUser = null;
 let currentUserData = null;
 let selectedReporterId = null;
 let currentRole = null;
+let isRegistering = false;
 let scores = {};
 let justifications = {};
 
 // ========== AUTH STATE ==========
 onAuthStateChanged(auth, async user => {
   if(user){
+    if(isRegistering) return;
     currentUser = user;
     const snap = await getDoc(doc(db,"users",user.uid));
     // إن لم يُعثر على بيانات المستخدم في Firestore (محذوف) → إخراج فوري
@@ -519,6 +499,9 @@ onAuthStateChanged(auth, async user => {
     currentUserData = snap.data();
     currentRole = normalizeRole(currentUserData?.role || "journalist");
     document.getElementById("userBadge").textContent = `${currentUserData?.name || user.email} — ${getRoleLabel(currentRole)}`;
+    if(currentUserData?.mustChangePassword){
+      setTimeout(()=>alert("هذه أول مرة تدخل فيها. اضغط «تغيير كلمة السر» لوضع كلمة سر خاصة بك."), 700);
+    }
     applyRoleUI();
     document.getElementById("authScreen").style.display = "none";
     document.getElementById("appScreen").style.display = "flex";
@@ -544,40 +527,40 @@ window.switchAuthTab = (tab) => {
   document.getElementById("authError").style.display = "none";
 };
 
+const INTERNAL_EMAIL_DOMAIN = "diwanfm.local";
+
+function internalEmailForName(name){
+  const source = String(name || "").trim().normalize("NFKC");
+  let hash = 2166136261;
+  for(const ch of source){ hash ^= ch.codePointAt(0); hash = Math.imul(hash, 16777619); }
+  return `user-${(hash >>> 0).toString(36)}@${INTERNAL_EMAIL_DOMAIN}`;
+}
+
 window.doLogin = async () => {
-  const email = document.getElementById("loginEmail").value.trim();
-  const pass  = document.getElementById("loginPassword").value;
+  const name = document.getElementById("loginName").value.trim();
+  const pass = document.getElementById("loginPassword").value;
+  if(!name || !pass){ showAuthError("يرجى إدخال الاسم الكامل وكلمة السر"); return; }
   try {
-    await signInWithEmailAndPassword(auth, email, pass);
+    await signInWithEmailAndPassword(auth, internalEmailForName(name), pass);
   } catch(e) {
-    showAuthError("البريد أو كلمة المرور غير صحيحة");
+    showAuthError("الاسم أو كلمة السر غير صحيحين. تأكد من كتابة الاسم كما أرسلته الإدارة.");
   }
 };
 
 window.doRegister = async () => {
-  const name  = document.getElementById("regName").value.trim();
-  const email = document.getElementById("regEmail").value.trim();
-  const pass  = document.getElementById("regPassword").value;
-  const code  = document.getElementById("regCode").value.trim().toLowerCase();
-  const role = Object.keys(REGISTRATION_CODES).find(key => REGISTRATION_CODES[key] === code);
-  if(!name||!email||!pass||!code){ showAuthError("يرجى تعبئة جميع الحقول"); return; }
-  if(!role){ showAuthError("كود التسجيل غير صحيح. اطلب الكود المناسب من الإدارة."); return; }
+  showAuthError("التسجيل مغلق. الحسابات تُنشأ مسبقاً من الإدارة.");
+};
+
+window.changePassword = async () => {
+  const newPass = prompt("اكتب كلمة السر الجديدة (6 أحرف أو أرقام على الأقل):");
+  if(newPass === null) return;
+  if(newPass.length < 6){ alert("كلمة السر يجب أن تحتوي على 6 أحرف أو أرقام على الأقل."); return; }
   try {
-    const cred = await createUserWithEmailAndPassword(auth, email, pass);
-    await updateProfile(cred.user, {displayName: name});
-    let reporterId = null;
-    if(role === "reporter"){
-      const reporterRef = await addDoc(collection(db,"reporters"), {
-        name, region:"", notes:"", linkedUserId: cred.user.uid, linkedEmail: email, createdAt: serverTimestamp()
-      });
-      reporterId = reporterRef.id;
-    }
-    await setDoc(doc(db,"users",cred.user.uid), {
-      name, email, role, reporterId, registrationCode: code, createdAt: serverTimestamp()
-    });
-    await updateDoc(doc(db,"users",cred.user.uid), {registrationCode: deleteField()});
+    await updatePassword(auth.currentUser, newPass);
+    await updateDoc(doc(db,"users",auth.currentUser.uid), {mustChangePassword:false});
+    alert("✅ تم تغيير كلمة السر بنجاح.");
   } catch(e) {
-    showAuthError("حدث خطأ أثناء إنشاء الحساب: " + e.message);
+    alert("تعذر تغيير كلمة السر: " + (e.code || e.message));
   }
 };
 
