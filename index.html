@@ -203,10 +203,12 @@ tr:hover td{background:var(--surface2)}
         <input type="password" id="regPassword" placeholder="••••••••">
       </div>
       <div class="form-group">
-        <label>رمز الانضمام</label>
-        <input type="text" id="regCode" placeholder="أدخل رمز الفريق">
+        <label>كود التسجيل</label>
+        <input type="text" id="regCode" placeholder="أدخل الكود الذي منحته لك الإدارة" autocomplete="off">
+        <p style="color:var(--muted);font-size:.75rem;margin-top:7px;line-height:1.7">الكود يحدد نوع الحساب تلقائياً. لا تحتاج إلى اختيار النوع.</p>
       </div>
       <button class="btn btn-primary" onclick="doRegister()">إنشاء الحساب</button>
+      <p style="color:var(--muted);font-size:.75rem;margin-top:12px;line-height:1.7">المراسل يرى تقييماته فقط، والصحفي يقيّم المراسلين ويرى تقييماته الشخصية، والإدارة تملك العرض التجميعي.</p>
     </div>
   </div>
 </div>
@@ -222,8 +224,9 @@ tr:hover td{background:var(--surface2)}
   </div>
   <div class="nav-tabs">
     <button class="nav-tab active" onclick="showPage('home')">🏠 الرئيسية</button>
-    <button class="nav-tab" onclick="showPage('evaluate')">✍️ تقييم شهري</button>
-    <button class="nav-tab" onclick="showPage('results')">📈 النتائج</button>
+    <button class="nav-tab" id="evaluateTabBtn" onclick="showPage('evaluate')">✍️ تقييم شهري</button>
+    <button class="nav-tab" id="resultsTabBtn" onclick="showPage('results')">📈 تقييماتي</button>
+    <button class="nav-tab" id="messagesTabBtn" onclick="showPage('messages')" style="display:none">💬 مراسلة الإدارة</button>
     <button class="nav-tab" id="adminTabBtn" onclick="showPage('admin')" style="display:none">⚙️ الإدارة</button>
   </div>
   <div class="app-content">
@@ -249,7 +252,7 @@ tr:hover td{background:var(--surface2)}
         </div>
       </div>
       <div class="card">
-        <div class="card-header"><div class="card-title">🏆 أفضل المراسلين هذا الشهر</div></div>
+        <div class="card-header"><div class="card-title" id="homeSummaryTitle">🏆 أفضل المراسلين هذا الشهر</div></div>
         <div id="topReportersList"></div>
       </div>
       <div class="card">
@@ -344,6 +347,17 @@ tr:hover td{background:var(--surface2)}
       </div>
     </div>
 
+    <!-- MESSAGES PAGE -->
+    <div id="messagesPage" class="page">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title" id="messagesTitle">💬 مراسلة الإدارة</div>
+          <button class="btn btn-primary" id="newMessageBtn" onclick="openMessageModal()" style="width:auto;padding:8px 18px">+ رسالة جديدة</button>
+        </div>
+        <div id="messagesList"></div>
+      </div>
+    </div>
+
     <!-- ADMIN PAGE -->
     <div id="adminPage" class="page">
       <div class="admin-notice">⚠️ هذه الصفحة خاصة بمدير النظام فقط.</div>
@@ -356,17 +370,22 @@ tr:hover td{background:var(--surface2)}
       </div>
       <div class="card">
         <div class="card-header">
-          <div class="card-title">🔑 رمز الانضمام للفريق</div>
+          <div class="card-title">🔑 أكواد تسجيل الحسابات</div>
         </div>
         <div style="display:flex;align-items:center;gap:12px">
           <input type="text" id="joinCodeDisplay" readonly style="flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:'Cairo',sans-serif;font-weight:700;font-size:1.1rem;color:var(--primary)">
           <button class="btn btn-secondary" onclick="copyJoinCode()" style="white-space:nowrap">📋 نسخ</button>
         </div>
-        <p style="color:var(--muted);font-size:0.82rem;margin-top:8px">شارك هذا الرمز مع أعضاء الفريق عند إنشاء حساباتهم</p>
+        <p style="color:var(--muted);font-size:0.82rem;margin-top:8px">امنح كل مستخدم الكود المناسب لدوره عند إنشاء الحساب.</p>
       </div>
       <div class="card">
         <div class="card-header"><div class="card-title">👤 المستخدمون المسجلون</div></div>
         <div id="usersList"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">💬 رسائل المراسلين</div></div>
+        <div id="adminMessagesList"></div>
       </div>
 
       <!-- ===== جميع التقييمات ===== -->
@@ -412,6 +431,25 @@ tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
+<!-- Modal: Message -->
+<div class="modal-overlay" id="messageModal">
+  <div class="modal">
+    <div class="modal-title">💬 رسالة إلى الإدارة</div>
+    <div class="form-group">
+      <label>الموضوع</label>
+      <input type="text" id="messageSubject" placeholder="مثال: ملاحظة حول التقييم">
+    </div>
+    <div class="form-group">
+      <label>الرسالة أو الملاحظة</label>
+      <textarea id="messageBody" class="justification" style="min-height:130px" placeholder="اكتب رسالتك للإدارة..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('messageModal')">إلغاء</button>
+      <button class="btn btn-primary" onclick="sendMessage()" style="width:auto">إرسال</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal: Eval Detail -->
 <div class="modal-overlay" id="evalDetailModal">
   <div class="modal" style="max-width:680px">
@@ -426,7 +464,7 @@ tr:hover td{background:var(--surface2)}
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, collection, query, where, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, deleteField, collection, query, where, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // ========== FIREBASE CONFIG ==========
 // ⚠️ ضع هنا إعدادات Firebase الخاصة بمشروعك
@@ -439,7 +477,11 @@ const firebaseConfig = {
   appId: "1:371357281616:web:cac0e7cd3cd2ef9ce81055"
 };
 
-const JOIN_CODE = "DIWANFM2026"; // رمز الانضمام للفريق — يمكن تغييره
+const REGISTRATION_CODES = {
+  reporter: "codiwanfm2026",
+  journalist: "jourdiwanfm2026",
+  admin: "admindiwanfm2026"
+};
 
 // ========== CRITERIA ==========
 const CRITERIA = [
@@ -459,6 +501,7 @@ const db   = getFirestore(app);
 let currentUser = null;
 let currentUserData = null;
 let selectedReporterId = null;
+let currentRole = null;
 let scores = {};
 let justifications = {};
 
@@ -474,11 +517,9 @@ onAuthStateChanged(auth, async user => {
       return;
     }
     currentUserData = snap.data();
-    document.getElementById("userBadge").textContent = currentUserData?.name || user.email;
-    if(currentUserData?.role === "admin"){
-      document.getElementById("adminTabBtn").style.display = "block";
-      document.getElementById("exportPdfBtn").style.display = "flex";
-    }
+    currentRole = currentUserData?.role || "journalist";
+    document.getElementById("userBadge").textContent = `${currentUserData?.name || user.email} — ${getRoleLabel(currentRole)}`;
+    applyRoleUI();
     document.getElementById("authScreen").style.display = "none";
     document.getElementById("appScreen").style.display = "flex";
     // set default months
@@ -517,17 +558,26 @@ window.doRegister = async () => {
   const name  = document.getElementById("regName").value.trim();
   const email = document.getElementById("regEmail").value.trim();
   const pass  = document.getElementById("regPassword").value;
-  const code  = document.getElementById("regCode").value.trim();
-  if(!name||!email||!pass){ showAuthError("يرجى تعبئة جميع الحقول"); return; }
-  if(code !== JOIN_CODE){ showAuthError("رمز الانضمام غير صحيح"); return; }
+  const code  = document.getElementById("regCode").value.trim().toLowerCase();
+  const role = Object.keys(REGISTRATION_CODES).find(key => REGISTRATION_CODES[key] === code);
+  if(!name||!email||!pass||!code){ showAuthError("يرجى تعبئة جميع الحقول"); return; }
+  if(!role){ showAuthError("كود التسجيل غير صحيح. اطلب الكود المناسب من الإدارة."); return; }
   try {
     const cred = await createUserWithEmailAndPassword(auth, email, pass);
     await updateProfile(cred.user, {displayName: name});
+    let reporterId = null;
+    if(role === "reporter"){
+      const reporterRef = await addDoc(collection(db,"reporters"), {
+        name, region:"", notes:"", linkedUserId: cred.user.uid, linkedEmail: email, createdAt: serverTimestamp()
+      });
+      reporterId = reporterRef.id;
+    }
     await setDoc(doc(db,"users",cred.user.uid), {
-      name, email, role:"journalist", createdAt: serverTimestamp()
+      name, email, role, reporterId, registrationCode: code, createdAt: serverTimestamp()
     });
+    await updateDoc(doc(db,"users",cred.user.uid), {registrationCode: deleteField()});
   } catch(e) {
-    showAuthError("حدث خطأ: " + e.message);
+    showAuthError("حدث خطأ أثناء إنشاء الحساب: " + e.message);
   }
 };
 
@@ -541,25 +591,69 @@ function showAuthError(msg){
 
 // ========== NAVIGATION ==========
 window.showPage = (page) => {
+  const allowed = page === "home" ||
+    (page === "evaluate" && (currentRole === "journalist" || currentRole === "admin")) ||
+    (page === "results") ||
+    (page === "messages" && (currentRole === "reporter" || currentRole === "admin")) ||
+    (page === "admin" && currentRole === "admin");
+  if(!allowed) return;
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
   document.querySelectorAll(".nav-tab").forEach(t=>t.classList.remove("active"));
   document.getElementById(page+"Page").classList.add("active");
-  event.target.classList.add("active");
-  if(page==="results"){ renderResults(); populateChartSelect(); }
+  const tab = document.querySelector(`[onclick="showPage('${page}')"]`);
+  if(tab) tab.classList.add("active");
+  if(page==="results"){ renderResults(); if(currentRole !== "reporter") populateChartSelect(); }
   if(page==="admin") loadAdmin();
   if(page==="evaluate") loadEvaluatePage();
+  if(page==="messages") loadMessages();
 };
+
+function getRoleLabel(role){
+  return role === "admin" ? "الإدارة" : role === "reporter" ? "مراسل" : "صحفي";
+}
+
+function applyRoleUI(){
+  const isAdmin = currentRole === "admin";
+  const isReporter = currentRole === "reporter";
+  document.getElementById("evaluateTabBtn").style.display = isReporter ? "none" : "block";
+  document.getElementById("resultsTabBtn").textContent = isReporter ? "📈 تقييمي" : "📈 تقييماتي";
+  document.getElementById("messagesTabBtn").style.display = (isReporter || isAdmin) ? "block" : "none";
+  document.getElementById("adminTabBtn").style.display = isAdmin ? "block" : "none";
+  document.getElementById("exportPdfBtn").style.display = isAdmin ? "flex" : "none";
+  document.getElementById("homeSummaryTitle").textContent = isReporter ? "📋 آخر تقييماتي" : "🏆 أفضل المراسلين هذا الشهر";
+  if(isReporter){ document.getElementById("messagesTitle").textContent = "💬 مراسلة الإدارة"; }
+}
 
 // ========== HOME PAGE ==========
 async function loadHome(){
   const reporters = await getReporters();
   const month = document.getElementById("evalMonth").value;
-  const evalsSnap = await getDocs(query(collection(db,"evaluations"),where("month","==",month)));
+  const isReporter = currentRole === "reporter";
+  const isAdmin = currentRole === "admin";
+  const evalQuery = isReporter
+    ? query(collection(db,"evaluations"),where("month","==",month),where("reporterId","==",currentUserData.reporterId))
+    : isAdmin
+      ? query(collection(db,"evaluations"),where("month","==",month))
+      : query(collection(db,"evaluations"),where("month","==",month),where("evaluatorId","==",currentUser.uid));
+  const evalsSnap = await getDocs(evalQuery);
   const evals = evalsSnap.docs.map(d=>d.data());
   const myEvals = evals.filter(e=>e.evaluatorId===currentUser.uid);
   document.getElementById("statReporters").textContent = reporters.length;
   document.getElementById("statEvals").textContent = evals.length;
   document.getElementById("statMyEvals").textContent = myEvals.length;
+  if(isReporter){
+    document.getElementById("statReporters").textContent = "1";
+    document.getElementById("statEvals").textContent = evals.length;
+    document.getElementById("statMyEvals").textContent = evals.length;
+    document.getElementById("statAvg").textContent = evals.length ? (evals.reduce((s,e)=>s+e.total,0)/evals.length).toFixed(1) : "—";
+    document.getElementById("topReportersList").innerHTML = evals.length ? evals.map(e=>`<div class="eval-list-item"><div class="eval-list-header"><strong>${e.evaluatorName||"صحفي"}</strong><span class="badge ${getBadgeClass(e.total)}">${e.total}/100 — ${e.classification||getClass(e.total)}</span></div><div style="font-size:.82rem;color:var(--muted)">${month}</div><button class="btn btn-secondary" style="margin-top:10px;padding:6px 12px;font-size:.8rem" onclick="showOwnEvalDetail('${month}')">🔍 عرض التفاصيل</button></div>`).join("") : `<div class="empty"><div class="empty-icon">📭</div><h3>لا توجد تقييمات منشورة لك هذا الشهر</h3><p style="font-size:.85rem">يمكنك مراسلة الإدارة عند الحاجة.</p></div>`;
+    return;
+  }
+  if(!isAdmin){
+    document.getElementById("statAvg").textContent = evals.length ? (evals.reduce((s,e)=>s+e.total,0)/evals.length).toFixed(1) : "—";
+    document.getElementById("topReportersList").innerHTML = evals.length ? evals.map(e=>`<div class="eval-list-item"><div class="eval-list-header"><strong>${e.evaluatorName||"تقييمي"}</strong><span class="badge ${getBadgeClass(e.total)}">${e.total}/100 — ${e.classification||getClass(e.total)}</span></div><div style="font-size:.82rem;color:var(--muted)">${month}</div></div>`).join("") : `<div class="empty"><div class="empty-icon">📭</div><h3>لم تنجز أي تقييم هذا الشهر بعد</h3><p style="font-size:.85rem">اذهب إلى صفحة «تقييم شهري» لبدء التقييم.</p></div>`;
+    return;
+  }
   // top reporters
   const rMap = {};
   reporters.forEach(r=>rMap[r.id]={name:r.name, scores:[]});
@@ -588,7 +682,7 @@ async function loadHome(){
 
 // ========== EVALUATE PAGE ==========
 async function loadEvaluatePage(){
-  if(!currentUser) return;
+  if(!currentUser || (currentRole !== "journalist" && currentRole !== "admin")) return;
   const month = document.getElementById("evalMonth").value;
   const reporters = await getReporters();
   const myEvalsSnap = await getDocs(query(collection(db,"evaluations"),where("month","==",month),where("evaluatorId","==",currentUser.uid)));
@@ -702,7 +796,23 @@ window.submitEvaluation = async () => {
 window.renderResults = async () => {
   const month = document.getElementById("resultsMonth").value;
   const reporters = await getReporters();
-  const isAdmin = currentUserData?.role === "admin";
+  const isAdmin = currentRole === "admin";
+  const isReporter = currentRole === "reporter";
+
+  if(isReporter){
+    const ownSnap = await getDocs(query(collection(db,"evaluations"),where("month","==",month),where("reporterId","==",currentUserData.reporterId)));
+    const ownEvals = ownSnap.docs.map(d=>({id:d.id,...d.data()}));
+    if(!ownEvals.length){
+      document.getElementById("resultsTable").innerHTML = `<div class="empty"><div class="empty-icon">📭</div><h3>لا يوجد تقييم لهذا الشهر بعد</h3><p style="font-size:.85rem;margin-top:6px">سيظهر تقييمك هنا بعد اعتماده من الصحفيين.</p></div>`;
+    } else {
+      document.getElementById("resultsTable").innerHTML = ownEvals.map(e=>`<div class="eval-list-item"><div class="eval-list-header"><strong>تقييم الصحفي: ${e.evaluatorName||"غير محدد"}</strong><span class="badge ${getBadgeClass(e.total)}">${e.total}/100</span></div><div class="detail-criteria">${CRITERIA.map(c=>`<div class="detail-crit"><div class="detail-crit-name">${c.name}</div><div class="detail-crit-score">${e.scores?.[c.id]||0}<span style="font-size:.7rem;color:var(--muted)">/10</span></div><div class="detail-crit-justify">${e.justifications?.[c.id]||"—"}</div></div>`).join("")}</div></div>`).join("");
+    }
+    document.getElementById("evolutionChart").parentElement.parentElement.style.display = "none";
+    document.getElementById("criteriaChart").parentElement.parentElement.style.display = "none";
+    return;
+  }
+  document.getElementById("evolutionChart").parentElement.parentElement.style.display = "block";
+  document.getElementById("criteriaChart").parentElement.parentElement.style.display = "block";
 
   if(isAdmin){
     // ===== عرض الأدمين: كل التقييمات مع زر التفاصيل =====
@@ -766,6 +876,7 @@ window.renderResults = async () => {
 };
 
 window.showEvalDetail = async (reporterId, reporterName, month) => {
+  if(currentRole !== "admin") return;
   const evalsSnap = await getDocs(query(collection(db,"evaluations"),where("month","==",month),where("reporterId","==",reporterId)));
   const evals = evalsSnap.docs.map(d=>d.data());
   document.getElementById("evalDetailTitle").textContent = `تفاصيل تقييمات: ${reporterName} — ${month}`;
@@ -787,10 +898,61 @@ window.showEvalDetail = async (reporterId, reporterName, month) => {
   document.getElementById("evalDetailModal").classList.add("active");
 };
 
+// ========== MESSAGES ========== 
+window.openMessageModal = () => document.getElementById("messageModal").classList.add("active");
+
+window.sendMessage = async () => {
+  if(currentRole !== "reporter") return;
+  const subject = document.getElementById("messageSubject").value.trim();
+  const body = document.getElementById("messageBody").value.trim();
+  if(!body){ alert("يرجى كتابة الرسالة"); return; }
+  await addDoc(collection(db,"messages"), {subject: subject || "رسالة من المراسل", body, reporterId: currentUserData.reporterId, senderId: currentUser.uid, senderName: currentUserData.name || currentUser.email, status:"new", createdAt: serverTimestamp()});
+  document.getElementById("messageSubject").value = "";
+  document.getElementById("messageBody").value = "";
+  closeModal("messageModal");
+  alert("تم إرسال الرسالة إلى الإدارة");
+  loadMessages();
+};
+
+async function loadMessages(){
+  if(currentRole === "admin"){
+    await loadAdminMessages();
+    return;
+  }
+  if(currentRole === "reporter"){
+    const snap = await getDocs(query(collection(db,"messages"),where("senderId","==",currentUser.uid)));
+    const messages = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+    document.getElementById("messagesList").innerHTML = messages.length ? messages.map(m=>`<div class="eval-list-item"><div class="eval-list-header"><strong>${m.subject||"رسالة"}</strong><span class="badge ${m.status === "replied" ? "badge-good" : "badge-average"}">${m.status === "replied" ? "تم الرد" : "قيد المعالجة"}</span></div><div style="font-size:.88rem;line-height:1.8">${m.body}</div>${m.reply ? `<div style="margin-top:10px;padding:10px;background:#f0fdfa;border-right:3px solid var(--primary);font-size:.86rem"><strong>رد الإدارة:</strong><br>${m.reply}</div>` : ""}</div>`).join("") : `<div class="empty"><div class="empty-icon">💬</div><h3>لا توجد رسائل بعد</h3><p style="font-size:.85rem">استخدم زر «رسالة جديدة» للتواصل مع الإدارة.</p></div>`;
+  }
+}
+
+window.replyToMessage = async (id) => {
+  if(currentRole !== "admin") return;
+  const reply = prompt("اكتب رد الإدارة:");
+  if(!reply || !reply.trim()) return;
+  await updateDoc(doc(db,"messages",id), {reply: reply.trim(), status:"replied", repliedAt: serverTimestamp(), repliedBy: currentUser.uid});
+  loadAdmin();
+};
+
+async function loadAdminMessages(){
+  const snap = await getDocs(collection(db,"messages"));
+  const messages = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+  document.getElementById("adminMessagesList").innerHTML = messages.length ? messages.map(m=>`<div class="eval-list-item"><div class="eval-list-header"><strong>${m.senderName||"مراسل"} — ${m.subject||"رسالة"}</strong><span class="badge ${m.status === "replied" ? "badge-good" : "badge-average"}">${m.status === "replied" ? "تم الرد" : "جديدة"}</span></div><div style="font-size:.88rem;line-height:1.8">${m.body}</div>${m.reply ? `<div style="margin-top:10px;padding:10px;background:#f0fdfa;border-right:3px solid var(--primary);font-size:.86rem"><strong>الرد المرسل:</strong><br>${m.reply}</div>` : `<button class="btn btn-secondary" style="margin-top:10px;padding:6px 12px;font-size:.8rem" onclick="replyToMessage('${m.id}')">✉️ الرد</button>`}</div>`).join("") : `<div class="empty"><div class="empty-icon">💬</div><h3>لا توجد رسائل من المراسلين</h3></div>`;
+}
+
+window.showOwnEvalDetail = async (month) => {
+  if(currentRole !== "reporter") return;
+  const snap = await getDocs(query(collection(db,"evaluations"),where("month","==",month),where("reporterId","==",currentUserData.reporterId)));
+  const evals = snap.docs.map(d=>d.data());
+  document.getElementById("evalDetailTitle").textContent = `تفاصيل تقييمك — ${month}`;
+  document.getElementById("evalDetailContent").innerHTML = evals.map(e=>`<div class="eval-list-item"><div class="eval-list-header"><strong>${e.evaluatorName||"صحفي"}</strong><span class="badge ${getBadgeClass(e.total)}">${e.total}/100</span></div><div class="detail-criteria">${CRITERIA.map(c=>`<div class="detail-crit"><div class="detail-crit-name">${c.name}</div><div class="detail-crit-score">${e.scores?.[c.id]||0}/10</div><div class="detail-crit-justify">${e.justifications?.[c.id]||"—"}</div></div>`).join("")}</div></div>`).join("");
+  document.getElementById("evalDetailModal").classList.add("active");
+};
+
 // ========== ADMIN PAGE ==========
 async function loadAdmin(){
   const reporters = await getReporters();
-  document.getElementById("joinCodeDisplay").value = JOIN_CODE;
+  document.getElementById("joinCodeDisplay").value = "يتم تحديد الدور بالكود عند التسجيل";
   document.getElementById("reportersManageList").innerHTML = reporters.length
     ? reporters.map(r=>`
         <div class="reporter-item">
@@ -815,7 +977,7 @@ async function loadAdmin(){
     return `<div class="reporter-item">
       <div>
         <div class="reporter-item-name">${u.name}</div>
-        <div class="reporter-item-role">${u.email} — ${u.role==="admin"?"مدير 🔑":"صحفي"}</div>
+        <div class="reporter-item-role">${u.email} — ${getRoleLabel(u.role)}${u.reporterId ? " — مرتبط بالمراسل" : ""}</div>
       </div>
       ${actionBtn}
     </div>`;
@@ -835,6 +997,7 @@ async function loadAdmin(){
   if(prevVal) filterSel.value = prevVal;
 
   loadAllEvals();
+  loadAdminMessages();
 }
 
 // ========== جميع التقييمات (للأدمين) ==========
@@ -958,8 +1121,11 @@ window.deleteReporter = async (id) => {
         };
 
         window.copyJoinCode = () => {
-  navigator.clipboard.writeText(JOIN_CODE);
-  alert("✅ تم نسخ رمز الانضمام");
+  const codes = `كود المراسل: ${REGISTRATION_CODES.reporter}
+كود الصحفي: ${REGISTRATION_CODES.journalist}
+كود الإدارة: ${REGISTRATION_CODES.admin}`;
+  navigator.clipboard.writeText(codes);
+  alert("تم نسخ أكواد التسجيل الثلاثة");
 };
 
 // ========== HELPERS ==========
