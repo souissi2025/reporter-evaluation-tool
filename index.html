@@ -173,19 +173,35 @@ tr:hover td{background:var(--surface2)}
     <p>ديوان FM — قسم الأخبار</p>
     <div id="authError" class="error-msg"></div>
     <div class="auth-tabs">
-      <button class="auth-tab active">تسجيل الدخول</button>
+      <button class="auth-tab active" onclick="switchAuthTab('login')">تسجيل الدخول</button>
+      <button class="auth-tab" onclick="switchAuthTab('register')">حساب جديد</button>
     </div>
     <div id="loginForm">
       <div class="form-group">
         <label>الاسم الكامل أو البريد الإلكتروني</label>
-        <input type="text" id="loginName" placeholder="الاسم الكامل أو souissi2025@gmail.com" autocomplete="username">
+        <input type="text" id="loginName" placeholder="اكتب اسمك الكامل أو souissi2025@gmail.com" autocomplete="username">
       </div>
       <div class="form-group">
         <label>كلمة السر</label>
-        <input type="password" id="loginPassword" placeholder="كلمة السر المؤقتة أو الجديدة" autocomplete="current-password">
+        <input type="password" id="loginPassword" placeholder="كلمة السر" autocomplete="current-password">
       </div>
       <button class="btn btn-primary" onclick="doLogin()">دخول</button>
-      <p style="color:var(--muted);font-size:.75rem;margin-top:12px;line-height:1.7">الحسابات تُنشأ مسبقاً من الإدارة. عند أول دخول استعمل كلمة السر المؤقتة، ثم غيّرها من زر «تغيير كلمة السر».</p>
+    </div>
+    <div id="registerForm" style="display:none">
+      <div class="form-group">
+        <label>الاسم الكامل</label>
+        <input type="text" id="regName" placeholder="اكتب اسمك الكامل">
+      </div>
+      <div class="form-group">
+        <label>كلمة السر</label>
+        <input type="password" id="regPassword" placeholder="كلمة السر">
+      </div>
+      <div class="form-group">
+        <label>كود التسجيل</label>
+        <input type="text" id="regCode" placeholder="أدخل الكود الذي منحته لك الإدارة" autocomplete="off">
+        <p style="color:var(--muted);font-size:.75rem;margin-top:7px;line-height:1.7">الكود يحدد نوع الحساب تلقائياً. لا تحتاج إلى بريد إلكتروني.</p>
+      </div>
+      <button class="btn btn-primary" onclick="doRegister()">إنشاء الحساب</button>
     </div>
   </div>
 </div>
@@ -565,7 +581,38 @@ window.doLogin = async () => {
 };
 
 window.doRegister = async () => {
-  showAuthError("التسجيل مغلق. الحسابات تُنشأ مسبقاً من الإدارة.");
+  const name = document.getElementById("regName").value.trim();
+  const pass = document.getElementById("regPassword").value;
+  const code = document.getElementById("regCode").value.trim().toLowerCase();
+  const role = Object.keys(REGISTRATION_CODES).find(key => REGISTRATION_CODES[key] === code);
+  if(!name || !pass || !code){ showAuthError("يرجى تعبئة الاسم وكلمة السر وكود التسجيل"); return; }
+  if(pass.length < 6){ showAuthError("كلمة السر يجب أن تحتوي على 6 أحرف أو أرقام على الأقل"); return; }
+  if(!role){ showAuthError("كود التسجيل غير صحيح. اطلب الكود المناسب من الإدارة."); return; }
+  try {
+    isRegistering = true;
+    const email = internalEmailForName(name);
+    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+    await updateProfile(cred.user, {displayName:name});
+    let reporterId = null;
+    if(role === "reporter"){
+      const reporterRef = await addDoc(collection(db,"reporters"), {
+        name, region:"", notes:"", linkedUserId:cred.user.uid, linkedEmail:email, createdAt:serverTimestamp()
+      });
+      reporterId = reporterRef.id;
+    }
+    await setDoc(doc(db,"users",cred.user.uid), {
+      name, username:name, email, role, reporterId, registrationCode:code, mustChangePassword:false, createdAt:serverTimestamp()
+    });
+    isRegistering = false;
+    await signOut(auth);
+    switchAuthTab("login");
+    document.getElementById("loginName").value = name;
+    document.getElementById("loginPassword").value = "";
+    showAuthError("✅ تم إنشاء الحساب. يمكنك الدخول الآن بالاسم وكلمة السر.");
+  } catch(e) {
+    isRegistering = false;
+    showAuthError("حدث خطأ أثناء إنشاء الحساب: " + (e.code || e.message));
+  }
 };
 
 window.changePassword = async () => {
