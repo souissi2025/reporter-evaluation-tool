@@ -517,7 +517,7 @@ onAuthStateChanged(auth, async user => {
       return;
     }
     currentUserData = snap.data();
-    currentRole = currentUserData?.role || "journalist";
+    currentRole = normalizeRole(currentUserData?.role || "journalist");
     document.getElementById("userBadge").textContent = `${currentUserData?.name || user.email} — ${getRoleLabel(currentRole)}`;
     applyRoleUI();
     document.getElementById("authScreen").style.display = "none";
@@ -608,12 +608,18 @@ window.showPage = (page) => {
   if(page==="messages") loadMessages();
 };
 
+function normalizeRole(role){
+  return String(role || "").trim().toLowerCase();
+}
+
 function getRoleLabel(role){
-  return role === "admin" ? "الإدارة" : role === "reporter" ? "مراسل" : "صحفي";
+  const normalized = normalizeRole(role);
+  return normalized === "admin" ? "الإدارة" : normalized === "reporter" ? "مراسل" : "صحفي";
 }
 
 function canEvaluate(){
-  return currentRole === "journalist" || currentRole === "admin" || currentUserData?.canEvaluate === true;
+  const normalized = normalizeRole(currentRole || currentUserData?.role);
+  return normalized === "journalist" || normalized === "admin" || currentUserData?.canEvaluate === true;
 }
 
 function applyRoleUI(){
@@ -687,21 +693,26 @@ async function loadHome(){
 // ========== EVALUATE PAGE ==========
 async function loadEvaluatePage(){
   if(!currentUser || !canEvaluate()) return;
-  const month = document.getElementById("evalMonth").value;
-  const reporters = await getReporters();
-  const myEvalsSnap = await getDocs(query(collection(db,"evaluations"),where("month","==",month),where("evaluatorId","==",currentUser.uid)));
-  const myEvalIds = new Set(myEvalsSnap.docs.map(d=>d.data().reporterId));
-  document.getElementById("monthProgress").textContent = `(قيّمت ${myEvalIds.size} من ${reporters.length})`;
-  if(!reporters.length){
-    document.getElementById("reportersEvalGrid").innerHTML=`<div class="empty"><div class="empty-icon">👤</div><h3>لا يوجد مراسلون مسجلون بعد</h3><p style="font-size:0.85rem">تواصل مع المدير لإضافة المراسلين</p></div>`;
-    return;
+  try {
+    const month = document.getElementById("evalMonth").value;
+    const reporters = await getReporters();
+    const myEvalsSnap = await getDocs(query(collection(db,"evaluations"),where("month","==",month),where("evaluatorId","==",currentUser.uid)));
+    const myEvalIds = new Set(myEvalsSnap.docs.map(d=>d.data().reporterId));
+    document.getElementById("monthProgress").textContent = `(قيّمت ${myEvalIds.size} من ${reporters.length})`;
+    if(!reporters.length){
+      document.getElementById("reportersEvalGrid").innerHTML=`<div class="empty"><div class="empty-icon">👤</div><h3>لا يوجد مراسلون مسجلون بعد</h3><p style="font-size:0.85rem">تواصل مع المدير لإضافة المراسلين</p></div>`;
+      return;
+    }
+    document.getElementById("reportersEvalGrid").innerHTML = reporters.map(r=>`
+      <div class="reporter-card ${myEvalIds.has(r.id)?'evaluated':''}" onclick="selectReporter('${r.id}','${r.name.replace(/'/g,"\'")}',${myEvalIds.has(r.id)})">
+        <div class="reporter-name">${r.name}</div>
+        <div style="font-size:0.82rem;color:var(--muted)">${r.region||""}</div>
+        <span class="reporter-status ${myEvalIds.has(r.id)?'status-done':'status-pending'}">${myEvalIds.has(r.id)?'✅ تم التقييم':'⏳ لم يقيَّم بعد'}</span>
+      </div>`).join("");
+  } catch(error) {
+    console.error("loadEvaluatePage", error);
+    document.getElementById("reportersEvalGrid").innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><h3>تعذر تحميل قائمة المراسلين</h3><p style="font-size:.85rem;margin-top:8px">${error.code || "خطأ غير معروف"}</p><p style="font-size:.8rem;margin-top:6px">تأكد من نشر قواعد Firestore الجديدة ثم أعد تحميل الصفحة.</p></div>`;
   }
-  document.getElementById("reportersEvalGrid").innerHTML = reporters.map(r=>`
-    <div class="reporter-card ${myEvalIds.has(r.id)?'evaluated':''}" onclick="selectReporter('${r.id}','${r.name.replace(/'/g,"\'")}',${myEvalIds.has(r.id)})">
-      <div class="reporter-name">${r.name}</div>
-      <div style="font-size:0.82rem;color:var(--muted)">${r.region||""}</div>
-      <span class="reporter-status ${myEvalIds.has(r.id)?'status-done':'status-pending'}">${myEvalIds.has(r.id)?'✅ تم التقييم':'⏳ لم يقيَّم بعد'}</span>
-    </div>`).join("");
 }
 
 document.getElementById("evalMonth").addEventListener("change",()=>{loadEvaluatePage();loadHome();});
@@ -767,38 +778,47 @@ window.closeCriteriaForm = () => {
 
 window.submitEvaluation = async () => {
   if(!canEvaluate()){
-    alert("هذا الحساب لا يملك صلاحية التقييم.");
+    alert(`هذا الحساب لا يملك صلاحية التقييم. الدور الحالي: ${currentRole || "غير معروف"}`);
     return;
   }
-  // validate
   const missing = CRITERIA.filter(c=>!scores[c.id]);
-  if(missing.length){ alert("يرجى إدخال علامة لجميع المعايير:\n"+missing.map(c=>c.name).join("\n")); return; }
+  if(missing.length){ alert("يرجى إدخال علامة لجميع المعايير:
+"+missing.map(c=>c.name).join("
+")); return; }
   const emptyJustify = CRITERIA.filter(c=>!justifications[c.id]?.trim());
-  if(emptyJustify.length){ alert("يرجى كتابة تعليل لجميع المعايير:\n"+emptyJustify.map(c=>c.name).join("\n")); return; }
+  if(emptyJustify.length){ alert("يرجى كتابة تعليل لجميع المعايير:
+"+emptyJustify.map(c=>c.name).join("
+")); return; }
   const month = document.getElementById("evalMonth").value;
   let total = 0;
   CRITERIA.forEach(c=>{ total += (scores[c.id]/10)*c.weight; });
-  // check existing
-  const snap = await getDocs(query(collection(db,"evaluations"),where("month","==",month),where("evaluatorId","==",currentUser.uid),where("reporterId","==",selectedReporterId)));
-  const evalData = {
-    month, reporterId: selectedReporterId, evaluatorId: currentUser.uid,
-    evaluatorName: currentUserData?.name || currentUser.email,
-    evaluatorRole: currentRole,
-    scores:{...scores}, justifications:{...justifications},
-    total: parseFloat(total.toFixed(2)),
-    classification: getClass(total),
-    updatedAt: serverTimestamp()
-  };
-  if(!snap.empty){
-    await updateDoc(doc(db,"evaluations",snap.docs[0].id), evalData);
-  } else {
-    evalData.createdAt = serverTimestamp();
-    await addDoc(collection(db,"evaluations"), evalData);
+  try {
+    const snap = await getDocs(query(collection(db,"evaluations"),where("month","==",month),where("evaluatorId","==",currentUser.uid),where("reporterId","==",selectedReporterId)));
+    const evalData = {
+      month, reporterId: selectedReporterId, evaluatorId: currentUser.uid,
+      evaluatorName: currentUserData?.name || currentUser.email,
+      evaluatorRole: normalizeRole(currentRole),
+      scores:{...scores}, justifications:{...justifications},
+      total: parseFloat(total.toFixed(2)),
+      classification: getClass(total),
+      updatedAt: serverTimestamp()
+    };
+    if(!snap.empty){
+      await updateDoc(doc(db,"evaluations",snap.docs[0].id), evalData);
+    } else {
+      evalData.createdAt = serverTimestamp();
+      await addDoc(collection(db,"evaluations"), evalData);
+    }
+    alert("✅ تم حفظ التقييم بنجاح!");
+    closeCriteriaForm();
+    loadEvaluatePage();
+    loadHome();
+  } catch(error) {
+    console.error("submitEvaluation", error);
+    alert(`تعذر حفظ التقييم. السبب: ${error.code || error.message || "خطأ غير معروف"}
+
+إذا ظهر permission-denied، انشر ملف firestore.rules الجديد ثم أعد تحميل التطبيق.`);
   }
-  alert("✅ تم حفظ التقييم بنجاح!");
-  closeCriteriaForm();
-  loadEvaluatePage();
-  loadHome();
 };
 
 // ========== RESULTS PAGE ==========
