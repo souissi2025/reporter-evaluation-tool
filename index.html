@@ -1155,6 +1155,11 @@ window.deleteReporter = async (id) => {
 
 // ========== HELPERS ==========
 async function getReporters(){
+  if(currentRole === "reporter" && currentUserData?.reporterId){
+    const ownSnap = await getDoc(doc(db,"reporters",currentUserData.reporterId));
+    return ownSnap.exists() ? [{id:ownSnap.id,...ownSnap.data()}] : [];
+  }
+  if(currentRole !== "admin" && currentRole !== "journalist") return [];
   const snap = await getDocs(collection(db,"reporters"));
   return snap.docs.map(d=>({id:d.id,...d.data()}));
 }
