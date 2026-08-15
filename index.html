@@ -177,8 +177,8 @@ tr:hover td{background:var(--surface2)}
     </div>
     <div id="loginForm">
       <div class="form-group">
-        <label>الاسم الكامل</label>
-        <input type="text" id="loginName" placeholder="اكتب اسمك الكامل" autocomplete="username">
+        <label>الاسم الكامل أو البريد الإلكتروني</label>
+        <input type="text" id="loginName" placeholder="الاسم الكامل أو souissi2025@gmail.com" autocomplete="username">
       </div>
       <div class="form-group">
         <label>كلمة السر</label>
@@ -460,6 +460,7 @@ const REGISTRATION_CODES = {
   journalist: "jourdiwanfm2026",
   admin: "admindiwanfm2026"
 };
+const OWNER_EMAIL = "souissi2025@gmail.com";
 
 // ========== CRITERIA ==========
 const CRITERIA = [
@@ -490,13 +491,28 @@ onAuthStateChanged(auth, async user => {
     if(isRegistering) return;
     currentUser = user;
     const snap = await getDoc(doc(db,"users",user.uid));
-    // إن لم يُعثر على بيانات المستخدم في Firestore (محذوف) → إخراج فوري
-    if(!snap.exists()){
+    const isOwner = (user.email || "").toLowerCase() === OWNER_EMAIL;
+    // حساب المالك محمي دائماً: يُعاد تثبيت دوره كإدارة عند كل دخول.
+    if(isOwner){
+      currentUserData = {
+        ...(snap.exists() ? snap.data() : {}),
+        name: user.displayName || snap.data()?.name || "صاحب الموقع",
+        email: OWNER_EMAIL,
+        role: "admin",
+        reporterId: null,
+        mustChangePassword: false,
+        protectedOwner: true
+      };
+      if(!snap.exists() || snap.data()?.role !== "admin" || snap.data()?.protectedOwner !== true){
+        await setDoc(doc(db,"users",user.uid), {...currentUserData, createdAt:serverTimestamp()}, {merge:true});
+      }
+    } else if(!snap.exists()){
       await signOut(auth);
-      showAuthError("تم حذف حسابك من النظام. تواصل مع المدير.");
+      showAuthError("لم يتم إعداد هذا الحساب بعد. تواصل مع المدير.");
       return;
+    } else {
+      currentUserData = snap.data();
     }
-    currentUserData = snap.data();
     currentRole = normalizeRole(currentUserData?.role || "journalist");
     document.getElementById("userBadge").textContent = `${currentUserData?.name || user.email} — ${getRoleLabel(currentRole)}`;
     if(currentUserData?.mustChangePassword){
@@ -537,13 +553,14 @@ function internalEmailForName(name){
 }
 
 window.doLogin = async () => {
-  const name = document.getElementById("loginName").value.trim();
+  const identifier = document.getElementById("loginName").value.trim();
   const pass = document.getElementById("loginPassword").value;
-  if(!name || !pass){ showAuthError("يرجى إدخال الاسم الكامل وكلمة السر"); return; }
+  if(!identifier || !pass){ showAuthError("يرجى إدخال الاسم أو البريد الإلكتروني وكلمة السر"); return; }
   try {
-    await signInWithEmailAndPassword(auth, internalEmailForName(name), pass);
+    const email = identifier.includes("@") ? identifier.toLowerCase() : internalEmailForName(identifier);
+    await signInWithEmailAndPassword(auth, email, pass);
   } catch(e) {
-    showAuthError("الاسم أو كلمة السر غير صحيحين. تأكد من كتابة الاسم كما أرسلته الإدارة.");
+    showAuthError("الاسم أو البريد الإلكتروني أو كلمة السر غير صحيحة.");
   }
 };
 
