@@ -590,15 +590,30 @@ window.doRegister = async () => {
   if(!role){ showAuthError("كود التسجيل غير صحيح. اطلب الكود المناسب من الإدارة."); return; }
   try {
     isRegistering = true;
+    let existingReporter = null;
+    if(role === "reporter"){
+      const reporterMatches = await getDocs(query(collection(db,"reporters"), where("name","==",name)));
+      if(reporterMatches.empty){
+        isRegistering = false;
+        showAuthError("هذا الاسم غير موجود في قائمة المراسلين. اطلب من الإدارة إضافة بطاقة المراسل أولاً.");
+        return;
+      }
+      if(reporterMatches.size > 1){
+        isRegistering = false;
+        showAuthError("هذا الاسم موجود أكثر من مرة. يجب على الإدارة توحيد الأسماء أو إضافة معلومة تميّز المراسل.");
+        return;
+      }
+      existingReporter = reporterMatches.docs[0];
+    }
     const email = internalEmailForName(name);
     const cred = await createUserWithEmailAndPassword(auth, email, pass);
     await updateProfile(cred.user, {displayName:name});
     let reporterId = null;
     if(role === "reporter"){
-      const reporterRef = await addDoc(collection(db,"reporters"), {
-        name, region:"", notes:"", linkedUserId:cred.user.uid, linkedEmail:email, createdAt:serverTimestamp()
+      reporterId = existingReporter.id;
+      await updateDoc(doc(db,"reporters",reporterId), {
+        linkedUserId:cred.user.uid, linkedEmail:email, updatedAt:serverTimestamp()
       });
-      reporterId = reporterRef.id;
     }
     await setDoc(doc(db,"users",cred.user.uid), {
       name, username:name, email, role, reporterId, registrationCode:code, mustChangePassword:false, createdAt:serverTimestamp()
