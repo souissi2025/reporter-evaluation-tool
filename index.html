@@ -1,12 +1,12 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>نظام تقييم المراسلين - ديوان FM</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
-<style>
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>نظام تقييم المراسلين - ديوان FM</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&amp;display=swap" rel="stylesheet">
+  <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --primary:#0d9488;--primary-dark:#0f766e;--primary-light:#99f6e4;
@@ -155,307 +155,359 @@ tr:hover td{background:var(--surface2)}
 .btn-chart:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(124,58,237,0.3)}
 .results-actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;align-items:center}
 .no-chart{text-align:center;padding:30px;color:var(--muted);font-size:0.9rem}
-</style>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<style>
-        body { font-family: 'Cairo', 'Arial', sans-serif !important; }
-</style></head>
-<body>
 
-<!-- ===== AUTH SCREEN ===== -->
-<div id="authScreen">
-  <div class="auth-box">
+/* ===== REPORTERS MAP ===== */
+.map-intro{background:linear-gradient(135deg,#ecfeff,#f0fdfa);border:1px solid #b6eee7;border-radius:14px;padding:18px 20px;margin-bottom:20px}
+.map-intro h2{font-size:1.2rem;color:var(--primary-dark);margin-bottom:6px}
+.map-intro p{color:var(--muted);font-size:.88rem;line-height:1.9}
+.map-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.map-toolbar input,.map-toolbar select{padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-family:'Cairo',sans-serif;font-size:.88rem;background:var(--surface);color:var(--text)}
+.map-toolbar input{min-width:220px;flex:1}
+.map-toolbar input:focus,.map-toolbar select:focus{outline:none;border-color:var(--primary)}
+.map-layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr);gap:20px;align-items:start}
+.tunisia-map-card{background:linear-gradient(180deg,#f8fffe,#effcf9);border:1px solid #c7eee8;border-radius:14px;padding:14px;box-shadow:var(--shadow);overflow:hidden}
+.tunisia-map-card svg{width:100%;height:auto;display:block;min-height:500px}
+.map-land{fill:#ccfbf1;stroke:#0f766e;stroke-width:5;stroke-linejoin:round}
+.map-land-shadow{fill:none;stroke:rgba(13,148,136,.12);stroke-width:14;stroke-linejoin:round}
+.map-grid-line{stroke:rgba(13,148,136,.11);stroke-width:1;stroke-dasharray:5 8}
+.governorate-marker{cursor:pointer;outline:none}
+.governorate-marker circle{fill:var(--primary);stroke:#fff;stroke-width:4;transition:all .2s;filter:drop-shadow(0 3px 4px rgba(15,118,110,.28))}
+.governorate-marker:hover circle,.governorate-marker.active circle{fill:#f59e0b;stroke:#fff;stroke-width:5;r:16}
+.governorate-marker text{font-family:'Cairo',sans-serif;font-size:15px;font-weight:800;fill:#134e4a;text-anchor:middle;pointer-events:none}
+.governorate-marker .marker-name{font-size:12px;font-weight:700;fill:#475569}
+.map-legend{display:flex;align-items:center;justify-content:center;gap:8px;color:var(--muted);font-size:.78rem;margin-top:-4px}
+.map-legend-dot{width:11px;height:11px;background:var(--primary);border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px var(--primary)}
+.map-side-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;box-shadow:var(--shadow);min-height:100%}
+.map-side-card h3{font-size:1rem;color:var(--primary-dark);margin-bottom:16px}
+.map-selected{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;border-radius:12px;padding:18px;margin-bottom:18px;min-height:150px}
+.map-selected.empty-selected{background:var(--surface2);color:var(--muted);border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;text-align:center;font-size:.85rem;line-height:1.8}
+.map-selected .selected-governorate{font-size:.8rem;opacity:.85;margin-bottom:4px}
+.map-selected .selected-name{font-size:1.25rem;font-weight:900;margin-bottom:10px}
+.map-selected .selected-status{font-size:.78rem;background:rgba(255,255,255,.18);padding:4px 10px;border-radius:20px;display:inline-block}
+.map-list{display:grid;gap:10px;max-height:540px;overflow:auto;padding-left:2px}
+.map-list-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:all .2s}
+.map-list-item:hover,.map-list-item.active{border-color:var(--primary);background:#f0fdfa;transform:translateX(-2px)}
+.map-list-item strong{font-size:.88rem}.map-list-item span{display:block;color:var(--muted);font-size:.78rem;margin-top:2px}
+.map-list-pin{width:30px;height:30px;flex:0 0 30px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#ccfbf1;color:var(--primary-dark);font-weight:900;font-size:.82rem}
+.map-empty{padding:28px 14px;text-align:center;color:var(--muted);font-size:.85rem;background:var(--surface2);border-radius:10px}
+@media(max-width:860px){.map-layout{grid-template-columns:1fr}.tunisia-map-card svg{min-height:420px}.map-list{max-height:none}}
+@media(max-width:640px){.map-toolbar input{min-width:100%}.map-toolbar select{flex:1;min-width:145px}.tunisia-map-card{padding:8px}.tunisia-map-card svg{min-height:390px}.governorate-marker text{font-size:12px}.governorate-marker .marker-name{font-size:10px}}
+</style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+        body { font-family: 'Cairo', 'Arial', sans-serif !important; }
+</style>
+ </head>
+ <body>
+  <!-- ===== AUTH SCREEN ===== -->
+  <div id="authScreen">
+   <div class="auth-box">
     <div class="auth-logo">📊</div>
     <h1>نظام تقييم المراسلين</h1>
     <p>ديوان FM — قسم الأخبار</p>
     <div id="authError" class="error-msg"></div>
     <div class="auth-tabs">
-      <button class="auth-tab active" onclick="switchAuthTab('login')">تسجيل الدخول</button>
-      <button class="auth-tab" onclick="switchAuthTab('register')">حساب جديد</button>
+     <button class="auth-tab active" onclick="switchAuthTab('login')">تسجيل الدخول</button>
+     <button class="auth-tab" onclick="switchAuthTab('register')">حساب جديد</button>
     </div>
     <div id="loginForm">
-      <div class="form-group">
-        <label>الاسم الكامل أو البريد الإلكتروني</label>
-        <input type="text" id="loginName" placeholder="اكتب اسمك الكامل أو souissi2025@gmail.com" autocomplete="username">
-      </div>
-      <div class="form-group">
-        <label>كلمة السر</label>
-        <input type="password" id="loginPassword" placeholder="كلمة السر" autocomplete="current-password">
-      </div>
-      <button class="btn btn-primary" onclick="doLogin()">دخول</button>
+     <div class="form-group">
+      <label>الاسم الكامل أو البريد الإلكتروني</label> <input type="text" id="loginName" placeholder="اكتب اسمك الكامل أو souissi2025@gmail.com" autocomplete="username">
+     </div>
+     <div class="form-group">
+      <label>كلمة السر</label> <input type="password" id="loginPassword" placeholder="كلمة السر" autocomplete="current-password">
+     </div>
+     <button class="btn btn-primary" onclick="doLogin()">دخول</button>
     </div>
     <div id="registerForm" style="display:none">
-      <div class="form-group">
-        <label>الاسم الكامل</label>
-        <input type="text" id="regName" placeholder="اكتب اسمك الكامل">
-      </div>
-      <div class="form-group">
-        <label>كلمة السر</label>
-        <input type="password" id="regPassword" placeholder="كلمة السر">
-      </div>
-      <div class="form-group">
-        <label>كود التسجيل</label>
-        <input type="text" id="regCode" placeholder="أدخل الكود الذي منحته لك الإدارة" autocomplete="off">
-        <p style="color:var(--muted);font-size:.75rem;margin-top:7px;line-height:1.7">الكود يحدد نوع الحساب تلقائياً. لا تحتاج إلى بريد إلكتروني.</p>
-      </div>
-      <button class="btn btn-primary" onclick="doRegister()">إنشاء الحساب</button>
+     <div class="form-group">
+      <label>الاسم الكامل</label> <input type="text" id="regName" placeholder="اكتب اسمك الكامل">
+     </div>
+     <div class="form-group">
+      <label>كلمة السر</label> <input type="password" id="regPassword" placeholder="كلمة السر">
+     </div>
+     <div class="form-group">
+      <label>كود التسجيل</label> <input type="text" id="regCode" placeholder="أدخل الكود الذي منحته لك الإدارة" autocomplete="off">
+      <p style="color:var(--muted);font-size:.75rem;margin-top:7px;line-height:1.7">الكود يحدد نوع الحساب تلقائياً. لا تحتاج إلى بريد إلكتروني.</p>
+     </div>
+     <button class="btn btn-primary" onclick="doRegister()">إنشاء الحساب</button>
     </div>
+   </div>
   </div>
-</div>
-
-<!-- ===== APP SCREEN ===== -->
-<div id="appScreen" style="display:none;flex-direction:column">
-  <div class="topbar">
+  <!-- ===== APP SCREEN ===== -->
+  <div id="appScreen" style="display:none;flex-direction:column">
+   <div class="topbar">
     <div class="topbar-brand">📊 تقييم المراسلين — ديوان FM</div>
     <div class="topbar-user">
-      <span class="user-badge" id="userBadge">المستخدم</span>
-      <button class="btn-logout" onclick="changePassword()">تغيير كلمة السر</button>
-      <button class="btn-logout" onclick="doLogout()">خروج</button>
+     <span class="user-badge" id="userBadge">المستخدم</span>
+     <button class="btn-logout" onclick="changePassword()">تغيير كلمة السر</button>
+     <button class="btn-logout" onclick="doLogout()">خروج</button>
     </div>
-  </div>
-  <div class="nav-tabs">
+   </div>
+   <div class="nav-tabs">
     <button class="nav-tab active" onclick="showPage('home')">🏠 الرئيسية</button>
+    <button class="nav-tab" onclick="showPage('map')">🗺️ خريطة المراسلين</button>
     <button class="nav-tab" id="evaluateTabBtn" onclick="showPage('evaluate')">✍️ تقييم شهري</button>
     <button class="nav-tab" id="resultsTabBtn" onclick="showPage('results')">📈 تقييماتي</button>
     <button class="nav-tab" id="messagesTabBtn" onclick="showPage('messages')" style="display:none">💬 مراسلة الإدارة</button>
     <button class="nav-tab" id="adminTabBtn" onclick="showPage('admin')" style="display:none">⚙️ الإدارة</button>
-  </div>
-  <div class="app-content">
-
+   </div>
+   <div class="app-content">
     <!-- HOME PAGE -->
     <div id="homePage" class="page active">
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-value" id="statReporters">0</div>
-          <div class="stat-label">مراسل مسجل</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="statEvals">0</div>
-          <div class="stat-label">تقييم هذا الشهر</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="statMyEvals">0</div>
-          <div class="stat-label">تقييماتي هذا الشهر</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="statAvg">—</div>
-          <div class="stat-label">متوسط المراسلين</div>
-        </div>
+     <div class="stats-grid">
+      <div class="stat-card">
+       <div class="stat-value" id="statReporters">0</div>
+       <div class="stat-label">مراسل مسجل</div>
       </div>
-      <div class="card">
-        <div class="card-header"><div class="card-title" id="homeSummaryTitle">🏆 أفضل المراسلين هذا الشهر</div></div>
-        <div id="topReportersList"></div>
+      <div class="stat-card">
+       <div class="stat-value" id="statEvals">0</div>
+       <div class="stat-label">تقييم هذا الشهر</div>
       </div>
-      <div class="card">
-        <div class="card-header"><div class="card-title">ℹ️ معايير التقييم</div></div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px">
-          <div class="detail-crit"><div class="detail-crit-name">السرعة والاستجابة</div><div class="detail-crit-score" style="font-size:1.1rem">من 10 × 20%</div></div>
-          <div class="detail-crit"><div class="detail-crit-name">الدقة والمصداقية</div><div class="detail-crit-score" style="font-size:1.1rem">من 10 × 25%</div></div>
-          <div class="detail-crit"><div class="detail-crit-name">الصوت والحضور</div><div class="detail-crit-score" style="font-size:1.1rem">من 10 × 15%</div></div>
-          <div class="detail-crit"><div class="detail-crit-name">القيمة المضافة</div><div class="detail-crit-score" style="font-size:1.1rem">من 10 × 15%</div></div>
-          <div class="detail-crit"><div class="detail-crit-name">التفاعل والتواصل</div><div class="detail-crit-score" style="font-size:1.1rem">من 10 × 15%</div></div>
-          <div class="detail-crit"><div class="detail-crit-name">المبادرة والإبداع</div><div class="detail-crit-score" style="font-size:1.1rem">من 10 × 10%</div></div>
-        </div>
+      <div class="stat-card">
+       <div class="stat-value" id="statMyEvals">0</div>
+       <div class="stat-label">تقييماتي هذا الشهر</div>
       </div>
+      <div class="stat-card">
+       <div class="stat-value" id="statAvg">—</div>
+       <div class="stat-label">متوسط المراسلين</div>
+      </div>
+     </div>
+     <div class="card">
+      <div class="card-header">
+       <div class="card-title" id="homeSummaryTitle">🏆 أفضل المراسلين هذا الشهر</div>
+      </div>
+      <div id="topReportersList"></div>
+     </div>
+     <div class="card">
+      <div class="card-header">
+       <div class="card-title">ℹ️ معايير التقييم</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px">
+       <div class="detail-crit">
+        <div class="detail-crit-name">السرعة والاستجابة</div>
+        <div class="detail-crit-score" style="font-size:1.1rem">من 10 × 20%</div>
+       </div>
+       <div class="detail-crit">
+        <div class="detail-crit-name">الدقة والمصداقية</div>
+        <div class="detail-crit-score" style="font-size:1.1rem">من 10 × 25%</div>
+       </div>
+       <div class="detail-crit">
+        <div class="detail-crit-name">الصوت والحضور</div>
+        <div class="detail-crit-score" style="font-size:1.1rem">من 10 × 15%</div>
+       </div>
+       <div class="detail-crit">
+        <div class="detail-crit-name">القيمة المضافة</div>
+        <div class="detail-crit-score" style="font-size:1.1rem">من 10 × 15%</div>
+       </div>
+       <div class="detail-crit">
+        <div class="detail-crit-name">التفاعل والتواصل</div>
+        <div class="detail-crit-score" style="font-size:1.1rem">من 10 × 15%</div>
+       </div>
+       <div class="detail-crit">
+        <div class="detail-crit-name">المبادرة والإبداع</div>
+        <div class="detail-crit-score" style="font-size:1.1rem">من 10 × 10%</div>
+       </div>
+      </div>
+     </div>
     </div>
-
+    <!-- REPORTERS MAP PAGE -->
+    <div id="mapPage" class="page">
+     <div class="map-intro">
+      <h2>🗺️ انتشار مراسلي ديوان FM</h2>
+      <p>توزيع المراسلين حسب الولايات والمناطق. اضغط على أي نقطة في الخريطة أو على بطاقة من القائمة لعرض التفاصيل.</p>
+     </div>
+     <div class="map-toolbar">
+      <input id="mapSearch" type="search" placeholder="🔎 ابحث عن ولاية أو اسم مراسل..." oninput="renderReporterMap()" autocomplete="off"> <select id="mapGovernorateFilter" onchange="renderReporterMap()"> <option value="">كل الولايات والمناطق</option> </select> <span id="mapCount" style="font-size:.82rem;color:var(--muted);font-weight:600"></span>
+     </div>
+     <div class="map-layout">
+      <div class="tunisia-map-card">
+       <svg id="tunisiaMapSvg" viewBox="0 0 700 900" role="img" aria-label="خريطة تونس وتوزيع المراسلين">
+        <defs>
+         <linearGradient id="mapSeaGradient" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stop-color="#ecfeff"></stop> <stop offset="1" stop-color="#dff8f4"></stop>
+         </linearGradient>
+        </defs>
+        <rect width="700" height="900" rx="22" fill="url(#mapSeaGradient)"></rect> <path class="map-grid-line" d="M75 180H625M55 360H645M45 540H655M70 720H630"></path> <path class="map-grid-line" d="M190 35V865M350 25V875M510 45V855"></path> <path class="map-land-shadow" d="M185 58 L286 42 L384 62 L472 122 L515 205 L505 290 L536 358 L516 430 L560 500 L548 588 L566 656 L535 724 L494 782 L458 849 L389 872 L334 836 L305 782 L274 722 L222 681 L195 622 L156 572 L134 509 L139 445 L112 386 L133 323 L119 263 L146 198 L143 133Z"></path> <path class="map-land" d="M185 58 L286 42 L384 62 L472 122 L515 205 L505 290 L536 358 L516 430 L560 500 L548 588 L566 656 L535 724 L494 782 L458 849 L389 872 L334 836 L305 782 L274 722 L222 681 L195 622 L156 572 L134 509 L139 445 L112 386 L133 323 L119 263 L146 198 L143 133Z"></path> <text x="350" y="865" text-anchor="middle" fill="#0f766e" opacity=".55" font-family="Cairo" font-size="15" font-weight="700">الجمهورية التونسية</text> <g id="mapMarkers"></g>
+       </svg>
+       <div class="map-legend">
+        <span class="map-legend-dot"></span><span>نقطة انتشار مراسل</span><span style="margin-right:12px">•</span><span>اضغط على النقطة لعرض الاسم</span>
+       </div>
+      </div>
+      <div class="map-side-card">
+       <h3>📍 المراسلون حسب المنطقة</h3>
+       <div id="mapSelectedReporter" class="map-selected empty-selected">اختر ولاية أو منطقة من الخريطة لعرض المراسل المسؤول عنها.</div>
+       <div id="mapReportersList" class="map-list"></div>
+      </div>
+     </div>
+    </div>
     <!-- EVALUATE PAGE -->
     <div id="evaluatePage" class="page">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">✍️ تقييم شهري للمراسلين</div>
-        </div>
-        <div class="month-selector">
-          <label>📅 الشهر:</label>
-          <input type="month" id="evalMonth">
-          <span style="color:var(--muted);font-size:0.85rem" id="monthProgress"></span>
-        </div>
-        <p style="color:var(--muted);font-size:0.88rem;margin-bottom:16px">اختر مراسلاً لبدء أو تعديل تقييمه. التقييم الشهري يسمح بتقييم واحد فقط لكل مراسل.</p>
-        <div class="reporters-grid" id="reportersEvalGrid"></div>
+     <div class="card">
+      <div class="card-header">
+       <div class="card-title">✍️ تقييم شهري للمراسلين</div>
       </div>
-
-      <!-- Criteria Form -->
-      <div class="card criteria-form" id="criteriaFormCard">
-        <div class="card-header">
-          <div class="card-title" id="criteriaFormTitle">تقييم: ...</div>
-          <button class="btn btn-secondary" onclick="closeCriteriaForm()" style="padding:6px 14px;font-size:0.85rem">✕ إغلاق</button>
-        </div>
-        <div id="criteriaBlocks"></div>
-        <div class="total-display">
-          <div style="font-size:0.9rem;color:var(--muted);margin-bottom:4px">النتيجة الإجمالية</div>
-          <div class="total-number" id="liveTotal">0</div>
-          <div style="font-size:0.8rem;color:var(--muted)">/100</div>
-          <div class="total-class" id="liveClass"></div>
-        </div>
-        <div style="display:flex;gap:12px;justify-content:flex-end">
-          <button class="btn btn-secondary" onclick="closeCriteriaForm()">إلغاء</button>
-          <button class="btn btn-primary" onclick="submitEvaluation()" style="width:auto;padding:10px 28px">💾 حفظ التقييم</button>
-        </div>
+      <div class="month-selector">
+       <label>📅 الشهر:</label> <input type="month" id="evalMonth"> <span style="color:var(--muted);font-size:0.85rem" id="monthProgress"></span>
       </div>
+      <p style="color:var(--muted);font-size:0.88rem;margin-bottom:16px">اختر مراسلاً لبدء أو تعديل تقييمه. التقييم الشهري يسمح بتقييم واحد فقط لكل مراسل.</p>
+      <div class="reporters-grid" id="reportersEvalGrid"></div>
+     </div>
+     <!-- Criteria Form -->
+     <div class="card criteria-form" id="criteriaFormCard">
+      <div class="card-header">
+       <div class="card-title" id="criteriaFormTitle">تقييم: ...</div>
+       <button class="btn btn-secondary" onclick="closeCriteriaForm()" style="padding:6px 14px;font-size:0.85rem">✕ إغلاق</button>
+      </div>
+      <div id="criteriaBlocks"></div>
+      <div class="total-display">
+       <div style="font-size:0.9rem;color:var(--muted);margin-bottom:4px">النتيجة الإجمالية</div>
+       <div class="total-number" id="liveTotal">0</div>
+       <div style="font-size:0.8rem;color:var(--muted)">/100</div>
+       <div class="total-class" id="liveClass"></div>
+      </div>
+      <div style="display:flex;gap:12px;justify-content:flex-end">
+       <button class="btn btn-secondary" onclick="closeCriteriaForm()">إلغاء</button>
+       <button class="btn btn-primary" onclick="submitEvaluation()" style="width:auto;padding:10px 28px">💾 حفظ التقييم</button>
+      </div>
+     </div>
     </div>
-
     <!-- RESULTS PAGE -->
     <div id="resultsPage" class="page">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">📈 نتائج التقييمات</div>
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-            <input type="month" id="resultsMonth" onchange="renderResults()" style="border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-family:'Cairo',sans-serif">
-            <button id="exportPdfBtn" class="btn-pdf" onclick="exportPDF()" style="display:none">📄 تصدير PDF الشامل</button>
-          </div>
-        </div>
-        <div id="resultsTable"></div>
+     <div class="card">
+      <div class="card-header">
+       <div class="card-title">📈 نتائج التقييمات</div>
+       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <input type="month" id="resultsMonth" onchange="renderResults()" style="border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-family:'Cairo',sans-serif">
+        <button id="exportPdfBtn" class="btn-pdf" onclick="exportPDF()" style="display:none">📄 تصدير PDF الشامل</button>
+       </div>
       </div>
-
-      <!-- Chart Section -->
-      <div class="card chart-container">
-        <div class="card-title">📊 تطور أداء المراسلين</div>
-        <div class="reporter-filter" style="margin-top:16px">
-          <label>اختر مراسلاً:</label>
-          <select id="chartReporterSelect" onchange="renderChart()">
-            <option value="">-- اختر مراسلاً --</option>
-          </select>
-          <label style="margin-right:16px">الأشهر الأخيرة:</label>
-          <select id="chartMonthsCount" onchange="renderChart()">
-            <option value="3">3 أشهر</option>
-            <option value="6" selected>6 أشهر</option>
-            <option value="12">12 شهراً</option>
-          </select>
-        </div>
-        <div style="position:relative;height:320px">
-          <canvas id="evolutionChart"></canvas>
-          <div id="noChartMsg" class="no-chart">اختر مراسلاً لعرض تطور أدائه</div>
-        </div>
+      <div id="resultsTable"></div>
+     </div>
+     <!-- Chart Section -->
+     <div class="card chart-container">
+      <div class="card-title">📊 تطور أداء المراسلين</div>
+      <div class="reporter-filter" style="margin-top:16px">
+       <label>اختر مراسلاً:</label> <select id="chartReporterSelect" onchange="renderChart()"> <option value="">-- اختر مراسلاً --</option> </select> <label style="margin-right:16px">الأشهر الأخيرة:</label> <select id="chartMonthsCount" onchange="renderChart()"> <option value="3">3 أشهر</option> <option value="6" selected>6 أشهر</option> <option value="12">12 شهراً</option> </select>
       </div>
-
-      <!-- Criteria Chart -->
-      <div class="card chart-container">
-        <div class="card-title">🎯 تفاصيل المعايير — آخر شهر</div>
-        <div style="position:relative;height:300px">
-          <canvas id="criteriaChart"></canvas>
-          <div id="noCriteriaMsg" class="no-chart">اختر مراسلاً من القائمة أعلاه</div>
-        </div>
+      <div style="position:relative;height:320px">
+       <canvas id="evolutionChart"></canvas>
+       <div id="noChartMsg" class="no-chart">اختر مراسلاً لعرض تطور أدائه</div>
       </div>
+     </div>
+     <!-- Criteria Chart -->
+     <div class="card chart-container">
+      <div class="card-title">🎯 تفاصيل المعايير — آخر شهر</div>
+      <div style="position:relative;height:300px">
+       <canvas id="criteriaChart"></canvas>
+       <div id="noCriteriaMsg" class="no-chart">اختر مراسلاً من القائمة أعلاه</div>
+      </div>
+     </div>
     </div>
-
     <!-- MESSAGES PAGE -->
     <div id="messagesPage" class="page">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title" id="messagesTitle">💬 مراسلة الإدارة</div>
-          <button class="btn btn-primary" id="newMessageBtn" onclick="openMessageModal()" style="width:auto;padding:8px 18px">+ رسالة جديدة</button>
-        </div>
-        <div id="messagesList"></div>
+     <div class="card">
+      <div class="card-header">
+       <div class="card-title" id="messagesTitle">💬 مراسلة الإدارة</div>
+       <button class="btn btn-primary" id="newMessageBtn" onclick="openMessageModal()" style="width:auto;padding:8px 18px">+ رسالة جديدة</button>
       </div>
+      <div id="messagesList"></div>
+     </div>
     </div>
-
     <!-- ADMIN PAGE -->
     <div id="adminPage" class="page">
-      <div class="admin-notice">⚠️ هذه الصفحة خاصة بمدير النظام فقط.</div>
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">👥 المراسلون</div>
-          <button class="btn btn-primary" onclick="openAddReporter()" style="width:auto;padding:8px 18px">+ إضافة مراسل</button>
-        </div>
-        <div class="reporters-manage-list" id="reportersManageList"></div>
+     <div class="admin-notice">⚠️ هذه الصفحة خاصة بمدير النظام فقط.</div>
+     <div class="card">
+      <div class="card-header">
+       <div class="card-title">👥 المراسلون</div>
+       <button class="btn btn-primary" onclick="openAddReporter()" style="width:auto;padding:8px 18px">+ إضافة مراسل</button>
       </div>
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">🔑 أكواد تسجيل الحسابات</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px">
-          <input type="text" id="joinCodeDisplay" readonly style="flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:'Cairo',sans-serif;font-weight:700;font-size:1.1rem;color:var(--primary)">
-          <button class="btn btn-secondary" onclick="copyJoinCode()" style="white-space:nowrap">📋 نسخ</button>
-        </div>
-        <p style="color:var(--muted);font-size:0.82rem;margin-top:8px">امنح كل مستخدم الكود المناسب لدوره عند إنشاء الحساب.</p>
+      <div class="reporters-manage-list" id="reportersManageList"></div>
+     </div>
+     <div class="card">
+      <div class="card-header">
+       <div class="card-title">🔑 أكواد تسجيل الحسابات</div>
       </div>
-      <div class="card">
-        <div class="card-header"><div class="card-title">👤 المستخدمون المسجلون</div></div>
-        <div id="usersList"></div>
+      <div style="display:flex;align-items:center;gap:12px">
+       <input type="text" id="joinCodeDisplay" readonly style="flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:'Cairo',sans-serif;font-weight:700;font-size:1.1rem;color:var(--primary)">
+       <button class="btn btn-secondary" onclick="copyJoinCode()" style="white-space:nowrap">📋 نسخ</button>
       </div>
-
-      <div class="card">
-        <div class="card-header"><div class="card-title">💬 رسائل المراسلين</div></div>
-        <div id="adminMessagesList"></div>
+      <p style="color:var(--muted);font-size:0.82rem;margin-top:8px">امنح كل مستخدم الكود المناسب لدوره عند إنشاء الحساب.</p>
+     </div>
+     <div class="card">
+      <div class="card-header">
+       <div class="card-title">👤 المستخدمون المسجلون</div>
       </div>
-
-      <!-- ===== جميع التقييمات ===== -->
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">📋 جميع التقييمات</div>
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-            <label style="font-size:0.85rem;font-weight:600;color:var(--muted)">الشهر:</label>
-            <input type="month" id="adminEvalsMonth" onchange="loadAllEvals()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:'Cairo',sans-serif;font-size:0.88rem;color:var(--primary);font-weight:700">
-            <label style="font-size:0.85rem;font-weight:600;color:var(--muted)">المراسل:</label>
-            <select id="adminEvalsReporterFilter" onchange="loadAllEvals()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:'Cairo',sans-serif;font-size:0.88rem;min-width:160px">
-              <option value="">الكل</option>
-            </select>
-          </div>
-        </div>
-        <div id="allEvalsList"></div>
+      <div id="usersList"></div>
+     </div>
+     <div class="card">
+      <div class="card-header">
+       <div class="card-title">💬 رسائل المراسلين</div>
       </div>
+      <div id="adminMessagesList"></div>
+     </div>
+     <!-- ===== جميع التقييمات ===== -->
+     <div class="card">
+      <div class="card-header">
+       <div class="card-title">📋 جميع التقييمات</div>
+       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <label style="font-size:0.85rem;font-weight:600;color:var(--muted)">الشهر:</label> <input type="month" id="adminEvalsMonth" onchange="loadAllEvals()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:'Cairo',sans-serif;font-size:0.88rem;color:var(--primary);font-weight:700"> <label style="font-size:0.85rem;font-weight:600;color:var(--muted)">المراسل:</label> <select id="adminEvalsReporterFilter" onchange="loadAllEvals()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:'Cairo',sans-serif;font-size:0.88rem;min-width:160px"> <option value="">الكل</option> </select>
+       </div>
+      </div>
+      <div id="allEvalsList"></div>
+     </div>
     </div>
-
+   </div>
   </div>
-</div>
-
-<!-- Modal: Add Reporter -->
-<div class="modal-overlay" id="addReporterModal">
-  <div class="modal">
+  <!-- Modal: Add Reporter -->
+  <div class="modal-overlay" id="addReporterModal">
+   <div class="modal">
     <div class="modal-title">➕ إضافة مراسل جديد</div>
     <div class="form-group">
-      <label>الاسم الكامل</label>
-      <input type="text" id="newReporterName" placeholder="اسم المراسل">
+     <label>الاسم الكامل</label> <input type="text" id="newReporterName" placeholder="اسم المراسل">
     </div>
     <div class="form-group">
-      <label>المنطقة / المحطة</label>
-      <input type="text" id="newReporterRegion" placeholder="مثال: صفاقس، تونس العاصمة...">
+     <label>المنطقة / المحطة</label> <input type="text" id="newReporterRegion" placeholder="مثال: صفاقس، تونس العاصمة...">
     </div>
     <div class="form-group">
-      <label>ملاحظات</label>
-      <textarea id="newReporterNotes" class="justification" placeholder="أي معلومات إضافية..."></textarea>
+     <label>ملاحظات</label> <textarea id="newReporterNotes" class="justification" placeholder="أي معلومات إضافية..."></textarea>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeModal('addReporterModal')">إلغاء</button>
-      <button class="btn btn-primary" onclick="saveReporter()" style="width:auto">حفظ</button>
+     <button class="btn btn-secondary" onclick="closeModal('addReporterModal')">إلغاء</button>
+     <button class="btn btn-primary" onclick="saveReporter()" style="width:auto">حفظ</button>
     </div>
+   </div>
   </div>
-</div>
-
-<!-- Modal: Message -->
-<div class="modal-overlay" id="messageModal">
-  <div class="modal">
+  <!-- Modal: Message -->
+  <div class="modal-overlay" id="messageModal">
+   <div class="modal">
     <div class="modal-title">💬 رسالة إلى الإدارة</div>
     <div class="form-group">
-      <label>الموضوع</label>
-      <input type="text" id="messageSubject" placeholder="مثال: ملاحظة حول التقييم">
+     <label>الموضوع</label> <input type="text" id="messageSubject" placeholder="مثال: ملاحظة حول التقييم">
     </div>
     <div class="form-group">
-      <label>الرسالة أو الملاحظة</label>
-      <textarea id="messageBody" class="justification" style="min-height:130px" placeholder="اكتب رسالتك للإدارة..."></textarea>
+     <label>الرسالة أو الملاحظة</label> <textarea id="messageBody" class="justification" style="min-height:130px" placeholder="اكتب رسالتك للإدارة..."></textarea>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeModal('messageModal')">إلغاء</button>
-      <button class="btn btn-primary" onclick="sendMessage()" style="width:auto">إرسال</button>
+     <button class="btn btn-secondary" onclick="closeModal('messageModal')">إلغاء</button>
+     <button class="btn btn-primary" onclick="sendMessage()" style="width:auto">إرسال</button>
     </div>
+   </div>
   </div>
-</div>
-
-<!-- Modal: Eval Detail -->
-<div class="modal-overlay" id="evalDetailModal">
-  <div class="modal" style="max-width:680px">
+  <!-- Modal: Eval Detail -->
+  <div class="modal-overlay" id="evalDetailModal">
+   <div class="modal" style="max-width:680px">
     <div class="modal-title" id="evalDetailTitle">تفاصيل التقييمات</div>
     <div id="evalDetailContent"></div>
     <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeModal('evalDetailModal')">إغلاق</button>
+     <button class="btn btn-secondary" onclick="closeModal('evalDetailModal')">إغلاق</button>
     </div>
+   </div>
   </div>
-</div>
-
-<script type="module">
+  <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, updatePassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, deleteField, collection, query, where, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -487,6 +539,28 @@ const CRITERIA = [
   {id:"engage", name:"التفاعل والتواصل",   weight:15},
   {id:"init",   name:"المبادرة والإبداع",  weight:10},
 ];
+
+// ========== خريطة انتشار المراسلين ==========
+// الإحداثيات تقريبية داخل الرسم التوضيحي للخريطة، ويمكن تعديلها لاحقاً عند اعتماد تصميم جغرافي أدق.
+const MAP_REPORTERS = [
+  {id:"tunis", governorate:"تونس العاصمة", reporter:"مفيدة الشرقي", x:414, y:150},
+  {id:"nabeul", governorate:"نابل", reporter:"ليلى بن سعد", x:486, y:185},
+  {id:"bizerte", governorate:"بنزرت", reporter:"بدر الدين عرعار", x:363, y:103},
+  {id:"beja", governorate:"باجة", reporter:"محمد عزيز التوجاني", x:279, y:164},
+  {id:"jendouba", governorate:"جندوبة", reporter:"روضة مديوني", x:205, y:190},
+  {id:"zaghouan", governorate:"زغوان", reporter:"محمد علي جرادة", x:404, y:230},
+  {id:"kasserine", governorate:"القصرين", reporter:"هادي نصرللي", x:238, y:430},
+  {id:"kebili", governorate:"قبلي", reporter:"هادي بوصفة", x:310, y:670},
+  {id:"medenine", governorate:"مدنين", reporter:"نعيمة خليصة", x:430, y:700},
+  {id:"gabes", governorate:"قابس", reporter:"بولبابة التلمودي", x:375, y:632},
+  {id:"gafsa", governorate:"قفصة", reporter:"رؤوف العياري", x:250, y:575},
+  {id:"kairouan", governorate:"القيروان", reporter:"حمزة الخلفاوي", x:360, y:400},
+  {id:"monastir", governorate:"المنستير", reporter:"ماهر جعيدان", x:470, y:405},
+  {id:"sidi-bouzid", governorate:"سيدي بوزيد", reporter:"فوزي الصالحي", x:325, y:525},
+  {id:"jebeniana", governorate:"جبنيانة", reporter:"وحيد الداهش", x:448, y:318}
+];
+let mapDirectory = MAP_REPORTERS.map(item=>({...item}));
+let selectedMapReporterId = null;
 
 // ========== INIT ==========
 const app = initializeApp(firebaseConfig);
@@ -654,6 +728,7 @@ function showAuthError(msg){
 // ========== NAVIGATION ==========
 window.showPage = (page) => {
   const allowed = page === "home" ||
+    page === "map" ||
     (page === "evaluate" && canEvaluate()) ||
     (page === "results") ||
     (page === "messages" && (currentRole === "reporter" || currentRole === "admin")) ||
@@ -665,9 +740,70 @@ window.showPage = (page) => {
   const tab = document.querySelector(`[onclick="showPage('${page}')"]`);
   if(tab) tab.classList.add("active");
   if(page==="results"){ renderResults(); if(currentRole !== "reporter") populateChartSelect(); }
+  if(page==="map"){ initReporterMap(); renderReporterMap(); }
   if(page==="admin") loadAdmin();
   if(page==="evaluate") loadEvaluatePage();
   if(page==="messages") loadMessages();
+};
+
+// ========== وظائف خريطة المراسلين ==========
+function initReporterMap(){
+  const select = document.getElementById("mapGovernorateFilter");
+  if(!select) return;
+  const current = select.value;
+  select.innerHTML = '<option value="">كل الولايات والمناطق</option>' +
+    mapDirectory.map(item=>`<option value="${item.id}">${item.governorate}</option>`).join("");
+  if(current && mapDirectory.some(item=>item.id===current)) select.value = current;
+}
+
+window.selectMapReporter = (id) => {
+  selectedMapReporterId = id;
+  renderReporterMap();
+  const selected = document.querySelector(`.map-list-item[data-map-id="${id}"]`);
+  if(selected) selected.scrollIntoView({behavior:"smooth",block:"nearest"});
+};
+
+window.renderReporterMap = () => {
+  const search = (document.getElementById("mapSearch")?.value || "").trim().toLocaleLowerCase("ar");
+  const governorate = document.getElementById("mapGovernorateFilter")?.value || "";
+  const matches = mapDirectory.filter(item => {
+    const haystack = `${item.governorate} ${item.reporter}`.toLocaleLowerCase("ar");
+    return (!search || haystack.includes(search)) && (!governorate || item.id===governorate);
+  });
+  const count = document.getElementById("mapCount");
+  if(count) count.textContent = `${matches.length} من ${mapDirectory.length} مراسل`;
+
+  const markers = document.getElementById("mapMarkers");
+  if(markers){
+    markers.innerHTML = matches.map((item,index)=>`
+      <g class="governorate-marker ${selectedMapReporterId===item.id?"active":""}" tabindex="0" role="button" aria-label="${item.governorate}: ${item.reporter}" onclick="selectMapReporter('${item.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectMapReporter('${item.id}')}" data-map-id="${item.id}">
+        <circle cx="${item.x}" cy="${item.y}" r="12"></circle>
+        <text x="${item.x}" y="${item.y-20}">${item.governorate}</text>
+      </g>`).join("");
+  }
+
+  const selected = matches.find(item=>item.id===selectedMapReporterId) || matches[0];
+  const selectedBox = document.getElementById("mapSelectedReporter");
+  if(selectedBox){
+    if(selected){
+      selectedMapReporterId = selected.id;
+      selectedBox.className = "map-selected";
+      selectedBox.innerHTML = `<div class="selected-governorate">الولاية / المنطقة</div><div class="selected-name">${selected.governorate}</div><div style="font-size:.9rem;margin-bottom:10px">${selected.reporter}</div><span class="selected-status">مراسل معتمد في الدليل</span>`;
+    } else {
+      selectedMapReporterId = null;
+      selectedBox.className = "map-selected empty-selected";
+      selectedBox.textContent = "لا توجد نتائج مطابقة للبحث الحالي.";
+    }
+  }
+
+  const list = document.getElementById("mapReportersList");
+  if(list){
+    list.innerHTML = matches.length ? matches.map((item,index)=>`
+      <div class="map-list-item ${selectedMapReporterId===item.id?"active":""}" data-map-id="${item.id}" onclick="selectMapReporter('${item.id}')">
+        <div><strong>${item.governorate}</strong><span>${item.reporter}</span></div>
+        <div class="map-list-pin">${index+1}</div>
+      </div>`).join("") : '<div class="map-empty">لم يتم العثور على ولاية أو مراسل بهذا الاسم.</div>';
+  }
 };
 
 function normalizeRole(role){
@@ -1719,5 +1855,5 @@ window.exportReporterPDF = async (reporterId, reporterName, month) => {
 };
 
 </script>
-</body>
+ </body>
 </html>
