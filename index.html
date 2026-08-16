@@ -696,8 +696,8 @@ onAuthStateChanged(auth, async user => {
         await setDoc(doc(db,"users",user.uid), {...currentUserData, createdAt:serverTimestamp()}, {merge:true});
       }
     } else if(snap.exists() && snap.data()?.accountStatus === "deleted"){
+      // الحساب القديم المفسوخ لا يوقف الدخول؛ doLogin يواصل البحث عن إصدار نشط أحدث.
       await signOut(auth);
-      showAuthError("تم حذف هذا الحساب من المنصة. تواصل مع المدير إذا كان الحذف بالخطأ.");
       return;
     } else if(!snap.exists()){
       // استرجاع عام للحسابات التي أُنشئت في Authentication ثم توقّف التسجيل قبل إنشاء users.
@@ -828,6 +828,18 @@ async function findReporterCardByName(name){
   return matches.size === 1 ? matches.docs[0] : null;
 }
 
+async function migrateAccountData(oldUid, newUid){
+  if(!oldUid || !newUid || oldUid === newUid) return;
+  const oldEvaluations = await getDocs(query(collection(db,"evaluations"), where("evaluatorId","==",oldUid)));
+  for(const item of oldEvaluations.docs){
+    await updateDoc(item.ref, {evaluatorId:newUid, migratedFromEvaluatorId:oldUid, migratedAt:serverTimestamp()});
+  }
+  const oldMessages = await getDocs(query(collection(db,"messages"), where("senderId","==",oldUid)));
+  for(const item of oldMessages.docs){
+    await updateDoc(item.ref, {senderId:newUid, migratedFromSenderId:oldUid, migratedAt:serverTimestamp()});
+  }
+}
+
 window.doLogin = async () => {
   const identifier = document.getElementById("loginName").value.trim();
   const pass = document.getElementById("loginPassword").value;
@@ -837,12 +849,19 @@ window.doLogin = async () => {
   for(const email of candidates){
     try{
       await signInWithEmailAndPassword(auth, email, pass);
+      const signedUser = auth.currentUser;
+      const profileSnap = signedUser ? await getDoc(doc(db,"users",signedUser.uid)) : null;
+      if(profileSnap?.exists() && profileSnap.data()?.accountStatus === "deleted"){
+        await signOut(auth);
+        lastError = {code:"auth/deleted-account"};
+        continue;
+      }
       return;
     }catch(error){
       lastError = error;
     }
   }
-  showAuthError(lastError?.code === "auth/too-many-requests" ? "تم تجاوز عدد المحاولات. حاول لاحقاً أو تواصل مع الإدارة." : "الاسم أو البريد الإلكتروني أو كلمة السر غير صحيحة.");
+  showAuthError(lastError?.code === "auth/too-many-requests" ? "تم تجاوز عدد المحاولات. حاول لاحقاً أو تواصل مع الإدارة." : lastError?.code === "auth/deleted-account" ? "هذا الحساب مفسوخ ولا يوجد حساب نشط مطابق. أعد التسجيل بالاسم والدور الصحيح." : "الاسم أو البريد الإلكتروني أو كلمة السر غير صحيحة.");
 };
 
 window.doRegister = async () => {
@@ -874,15 +893,22 @@ window.doRegister = async () => {
       }
       existingReporter = reporterMatches.docs[0];
     }
-    // منع إنشاء حساب نشط ثانٍ بالاسم والدور نفسيهما إذا كان الحساب القديم ما زال فعالاً.
+    // منع إنشاء حساب نشط ثانٍ، مع الاحتفاظ بأحدث حساب مفسوخ لإعادة ربط بياناته.
+    let priorDeletedAccount = null;
     try{
       const existingUsers = await getDocs(query(collection(db,"users"), where("name","==",name)));
-      const activeSameRole = existingUsers.docs.some(d=>d.data()?.role === role && d.data()?.accountStatus !== "deleted");
+      const sameRoleUsers = existingUsers.docs
+        .map(d=>({uid:d.id,...d.data()}))
+        .filter(u=>u.role === role);
+      const activeSameRole = sameRoleUsers.some(u=>u.accountStatus !== "deleted");
       if(activeSameRole){
         isRegistering = false;
         showAuthError("يوجد حساب نشط بهذا الاسم والدور. استعمل الدخول أو اطلب من الإدارة فسخ الحساب أولاً.");
         return;
       }
+      priorDeletedAccount = sameRoleUsers
+        .filter(u=>u.accountStatus === "deleted")
+        .sort((a,b)=>(b.accountVersion||1)-(a.accountVersion||1) || (b.deletedAt?.seconds||0)-(a.deletedAt?.seconds||0))[0] || null;
     }catch(userLookupError){
       // إذا كانت القراءة محمية قبل تسجيل الدخول، نواصل التسجيل؛ قواعد Firestore تبقى المرجع النهائي.
       console.warn("تعذر فحص الحسابات السابقة قبل التسجيل:", userLookupError);
@@ -906,8 +932,17 @@ window.doRegister = async () => {
     if(role === "reporter") reporterId = existingReporter.id;
     // إنشاء users أولاً يمنع ظهور حساب Authentication بلا إعداد عند تعذر تحديث بطاقة المراسل.
     await setDoc(doc(db,"users",cred.user.uid), {
-      name, username:name, email, role, reporterId, accountVersion, accountStatus:"active", registrationCode:code, mustChangePassword:false, createdAt:serverTimestamp()
+      name, username:name, email, role, reporterId, accountVersion, accountStatus:"active", restoredFromUid:priorDeletedAccount?.uid || null, registrationCode:code, mustChangePassword:false, createdAt:serverTimestamp()
     });
+    if(priorDeletedAccount?.uid){
+      try{
+        await migrateAccountData(priorDeletedAccount.uid, cred.user.uid);
+        await updateDoc(doc(db,"users",priorDeletedAccount.uid), {replacedByUid:cred.user.uid, dataMigratedTo:cred.user.uid, replacedAt:serverTimestamp()});
+      }catch(migrationError){
+        // لا نفشل التسجيل إذا كانت قواعد Firestore تمنع نقل بعض الوثائق؛ يبقى الربط موثقاً للحساب الجديد.
+        console.warn("تعذر نقل كل بيانات الحساب السابق:", migrationError);
+      }
+    }
     if(role === "reporter"){
       try{
         await updateDoc(doc(db,"reporters",reporterId), {
