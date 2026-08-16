@@ -309,7 +309,7 @@ tr:hover td{background:var(--surface2)}
     <button class="nav-tab active" onclick="showPage('home')">🏠 الرئيسية</button>
     <button class="nav-tab" onclick="showPage('map')">🗺️ خريطة المراسلين</button>
     <button class="nav-tab" id="evaluateTabBtn" onclick="showPage('evaluate')">✍️ تقييم شهري</button>
-    <button class="nav-tab" id="resultsTabBtn" onclick="showPage('results')">📈 تقييماتي</button>
+    <button class="nav-tab" id="resultsTabBtn" onclick="showPage('results')">📊 التقييمات</button>
     <button class="nav-tab" id="messagesTabBtn" onclick="showPage('messages')" style="display:none">💬 مراسلة الإدارة</button>
     <button class="nav-tab" id="adminTabBtn" onclick="showPage('admin')" style="display:none">⚙️ الإدارة</button>
   </div>
@@ -328,7 +328,7 @@ tr:hover td{background:var(--surface2)}
         </div>
         <div class="stat-card">
           <div class="stat-value" id="statMyEvals">0</div>
-          <div class="stat-label">تقييماتي هذا الشهر</div>
+          <div class="stat-label" id="statMyEvalsLabel">إجمالي التقييمات</div>
         </div>
         <div class="stat-card">
           <div class="stat-value" id="statAvg">—</div>
@@ -462,7 +462,7 @@ tr:hover td{background:var(--surface2)}
           <div class="card-title">📈 نتائج التقييمات</div>
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
             <input type="month" id="resultsMonth" onchange="renderResults()" style="border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-family:'Cairo',sans-serif">
-            <button id="exportPdfBtn" class="btn-pdf" onclick="exportPDF()" style="display:none">📄 تصدير PDF الشامل</button>
+            <button id="exportPdfBtn" class="btn-pdf" onclick="exportPDF()" style="display:none">📄 حفظ التقرير المفصل</button>
           </div>
         </div>
         <div id="resultsTable"></div>
@@ -545,11 +545,11 @@ tr:hover td{background:var(--surface2)}
           <div class="card-title">📑 التقرير الشهري الشامل لتقييمات المراسلين</div>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             <input type="month" id="adminEvaluationReportMonth" style="padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:'Cairo',sans-serif;font-weight:700;color:var(--primary)">
-            <button class="btn btn-danger" onclick="exportAdminMonthlyEvaluationsPDF()" style="width:auto;padding:8px 14px">📄 حفظ PDF سري</button>
+            <button class="btn btn-danger" onclick="exportAdminMonthlyEvaluationsPDF()" style="width:auto;padding:8px 14px">📄 حفظ ملف التقييم المفصل</button>
           </div>
         </div>
-        <p style="color:var(--muted);font-size:.82rem;line-height:1.8;margin-bottom:12px">يتضمن التقرير كل مراسل، وكل صحفي قام بتقييمه، والنتيجة النهائية، وعلامات المعايير والتعليلات. هذا التقرير متاح لقسم الإدارة فقط.</p>
-        <div id="adminEvaluationReportStatus" style="font-size:.82rem;color:var(--muted)">اختر الشهر ثم اضغط «حفظ PDF سري» لإنشاء التقرير.</div>
+        <p style="color:var(--muted);font-size:.82rem;line-height:1.8;margin-bottom:12px">يتضمن الملف كل مراسل، وكل صحفي قام بتقييمه، والنتيجة النهائية، وعلامات المعايير والتعليلات. الملف المفصل متاح لحسابات الإدارة فقط.</p>
+        <div id="adminEvaluationReportStatus" style="font-size:.82rem;color:var(--muted)">اختر الشهر ثم اضغط «حفظ ملف التقييم المفصل» لإنشاء الملف.</div>
       </div>
 
       <!-- ===== جميع التقييمات ===== -->
@@ -1360,12 +1360,14 @@ function applyRoleUI(){
   const isAdmin = currentRole === "admin";
   const isReporter = currentRole === "reporter";
   document.getElementById("evaluateTabBtn").style.display = canEvaluate() ? "block" : "none";
-  document.getElementById("resultsTabBtn").textContent = isReporter ? "📈 تقييمي" : "📈 تقييماتي";
+  document.getElementById("resultsTabBtn").textContent = isReporter ? "📈 تقييمي" : isAdmin ? "📊 تقييمات الصحفيين" : "📈 تقييماتي";
   document.getElementById("messagesTabBtn").style.display = (isReporter || isAdmin) ? "block" : "none";
   document.getElementById("adminTabBtn").style.display = isAdmin ? "block" : "none";
   document.getElementById("exportPdfBtn").style.display = isAdmin ? "flex" : "none";
   const mapAdminPanel = document.getElementById("mapAdminPanel");
   if(mapAdminPanel) mapAdminPanel.style.display = isAdmin ? "block" : "none";
+  const statMyEvalsLabel = document.getElementById("statMyEvalsLabel");
+  if(statMyEvalsLabel) statMyEvalsLabel.textContent = isAdmin ? "إجمالي تقييمات الصحفيين" : "تقييماتي هذا الشهر";
   document.getElementById("homeSummaryTitle").textContent = isReporter ? "📋 آخر تقييماتي" : "🏆 أفضل المراسلين هذا الشهر";
   if(isReporter){ document.getElementById("messagesTitle").textContent = "💬 مراسلة الإدارة"; }
 }
@@ -1386,7 +1388,7 @@ async function loadHome(){
   const myEvals = evals.filter(e=>e.evaluatorId===currentUser.uid);
   document.getElementById("statReporters").textContent = reporters.length;
   document.getElementById("statEvals").textContent = evals.length;
-  document.getElementById("statMyEvals").textContent = myEvals.length;
+  document.getElementById("statMyEvals").textContent = isAdmin ? evals.length : myEvals.length;
   if(isReporter){
     document.getElementById("statReporters").textContent = "1";
     document.getElementById("statEvals").textContent = evals.length;
@@ -1853,7 +1855,7 @@ window.exportAdminMonthlyEvaluationsPDF = async () => {
   }
   const month = document.getElementById("adminEvaluationReportMonth")?.value || new Date().toISOString().slice(0,7);
   const status = document.getElementById("adminEvaluationReportStatus");
-  if(status) status.textContent = "⏳ جارٍ جمع التقييمات وإنشاء التقرير السري...";
+  if(status) status.textContent = "⏳ جارٍ جمع التقييمات وإنشاء ملف التقييم المفصل...";
   try{
     const [reporters, evaluationsSnap] = await Promise.all([
       getReporters(),
@@ -1881,7 +1883,7 @@ window.exportAdminMonthlyEvaluationsPDF = async () => {
     }).join("");
     const container = document.createElement("div");
     container.style.cssText = "width:1000px;font-family:Cairo,Arial,sans-serif;direction:rtl;background:#fff;color:#1e293b;position:fixed;top:-10000px;left:-10000px;padding:0";
-    container.innerHTML = `<div style="background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;padding:38px 42px;text-align:center"><div style="font-size:12px;opacity:.8;margin-bottom:8px">وثيقة سرية — للإدارة فقط — ديوان FM</div><div style="font-size:27px;font-weight:900;margin-bottom:8px">التقرير الشهري الشامل لتقييمات المراسلين</div><div style="font-size:17px">${monthLabel}</div></div><div style="padding:28px 34px"><div style="display:flex;gap:12px;margin-bottom:24px"><div style="flex:1;text-align:center;background:#f0fdfa;border:1px solid #99e6db;border-radius:9px;padding:12px"><div style="font-size:11px;color:#0f766e">عدد المراسلين</div><strong style="font-size:22px;color:#0d9488">${totalReporters}</strong></div><div style="flex:1;text-align:center;background:#f0fdfa;border:1px solid #99e6db;border-radius:9px;padding:12px"><div style="font-size:11px;color:#0f766e">مراسلون تم تقييمهم</div><strong style="font-size:22px;color:#0d9488">${evaluatedReporters}</strong></div><div style="flex:1;text-align:center;background:#f0fdfa;border:1px solid #99e6db;border-radius:9px;padding:12px"><div style="font-size:11px;color:#0f766e">عدد التقييمات</div><strong style="font-size:22px;color:#0d9488">${evaluations.length}</strong></div><div style="flex:1;text-align:center;background:#f0fdfa;border:1px solid #99e6db;border-radius:9px;padding:12px"><div style="font-size:11px;color:#0f766e">المتوسط العام</div><strong style="font-size:22px;color:#0d9488">${avg}</strong></div></div>${reporterSections}<div style="margin-top:24px;padding-top:12px;border-top:1px solid #cbd5e1;text-align:center;color:#64748b;font-size:10px">سري — لا يسمح بتداول هذا التقرير خارج حسابات الإدارة — ${new Date().toLocaleDateString("ar-TN")}</div></div>`;
+    container.innerHTML = `<div style="background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;padding:38px 42px;text-align:center"><div style="font-size:12px;opacity:.8;margin-bottom:8px">ملف تقييم مفصل — للإدارة فقط — ديوان FM</div><div style="font-size:27px;font-weight:900;margin-bottom:8px">التقرير الشهري الشامل لتقييمات المراسلين</div><div style="font-size:17px">${monthLabel}</div></div><div style="padding:28px 34px"><div style="display:flex;gap:12px;margin-bottom:24px"><div style="flex:1;text-align:center;background:#f0fdfa;border:1px solid #99e6db;border-radius:9px;padding:12px"><div style="font-size:11px;color:#0f766e">عدد المراسلين</div><strong style="font-size:22px;color:#0d9488">${totalReporters}</strong></div><div style="flex:1;text-align:center;background:#f0fdfa;border:1px solid #99e6db;border-radius:9px;padding:12px"><div style="font-size:11px;color:#0f766e">مراسلون تم تقييمهم</div><strong style="font-size:22px;color:#0d9488">${evaluatedReporters}</strong></div><div style="flex:1;text-align:center;background:#f0fdfa;border:1px solid #99e6db;border-radius:9px;padding:12px"><div style="font-size:11px;color:#0f766e">عدد التقييمات</div><strong style="font-size:22px;color:#0d9488">${evaluations.length}</strong></div><div style="flex:1;text-align:center;background:#f0fdfa;border:1px solid #99e6db;border-radius:9px;padding:12px"><div style="font-size:11px;color:#0f766e">المتوسط العام</div><strong style="font-size:22px;color:#0d9488">${avg}</strong></div></div>${reporterSections}<div style="margin-top:24px;padding-top:12px;border-top:1px solid #cbd5e1;text-align:center;color:#64748b;font-size:10px">ملف تقييم مفصل — مخصص لحسابات الإدارة فقط — ${new Date().toLocaleDateString("ar-TN")}</div></div>`;
     document.body.appendChild(container);
     const canvas = await html2canvas(container,{scale:2,useCORS:true,backgroundColor:"#fff",logging:false});
     const {jsPDF} = window.jspdf;
@@ -1891,9 +1893,9 @@ window.exportAdminMonthlyEvaluationsPDF = async () => {
     doc.addImage(imgData,"JPEG",0,0,imgW,imgH);
     let remaining=imgH-pageH;
     while(remaining>0){ doc.addPage(); doc.addImage(imgData,"JPEG",0,-(imgH-remaining),imgW,imgH); remaining-=pageH; }
-    doc.save(`تقرير-تقييمات-المراسلين-${month}.pdf`);
+    doc.save(`ملف-التقييم-المفصل-${month}.pdf`);
     document.body.removeChild(container);
-    if(status) status.textContent = `✅ تم إنشاء التقرير السري لشهر ${monthLabel}.`;
+    if(status) status.textContent = `✅ تم إنشاء ملف التقييم المفصل لشهر ${monthLabel}.`;
   }catch(error){
     console.error("exportAdminMonthlyEvaluationsPDF",error);
     const hidden = document.querySelector('body > div[style*="top: -10000px"]');
@@ -2270,7 +2272,7 @@ window.exportPDF = async () => {
   container.innerHTML = `
     <!-- COVER HEADER -->
     <div style="background:linear-gradient(135deg,#0d9488,#0f766e);color:white;padding:44px 40px;text-align:center">
-      <div style="font-size:11px;opacity:0.75;letter-spacing:2px;margin-bottom:8px">وثيقة سرية — ديوان FM / قسم الأخبار</div>
+      <div style="font-size:11px;opacity:0.75;letter-spacing:2px;margin-bottom:8px">ملف تقييم مفصل — ديوان FM / قسم الأخبار</div>
       <div style="font-size:30px;font-weight:900;margin-bottom:8px">التقرير الشهري الشامل</div>
       <div style="font-size:16px;opacity:0.9;margin-bottom:4px">${monthLabel}</div>
       <div style="margin-top:16px;display:flex;justify-content:center;gap:30px;font-size:0.88em;opacity:0.85">
@@ -2320,7 +2322,7 @@ window.exportPDF = async () => {
 
       <!-- Footer -->
       <div style="margin-top:30px;padding-top:14px;border-top:1px solid #e2e8f0;text-align:center;font-size:10px;color:#94a3b8">
-        ديوان FM — تقرير شامل — للإدارة فقط — سري وغير مخصص للتوزيع — ${new Date().toLocaleDateString('ar-TN')}
+        ديوان FM — تقرير شامل — للإدارة فقط — مفصل وغير مخصص للتوزيع — ${new Date().toLocaleDateString('ar-TN')}
       </div>
     </div>`;
 
@@ -2412,7 +2414,7 @@ window.exportReporterPDF = async (reporterId, reporterName, month) => {
   container.style.cssText = 'width:794px;font-family:Cairo,Arial,sans-serif;direction:rtl;background:white;position:fixed;top:-9999px;left:-9999px;padding:0';
   container.innerHTML = `
     <div style="background:linear-gradient(135deg,#0d9488,#0f766e);color:white;padding:36px 40px;text-align:center">
-      <div style="font-size:11px;opacity:0.8;margin-bottom:6px;letter-spacing:1px">سري — ديوان FM / قسم الأخبار</div>
+      <div style="font-size:11px;opacity:0.8;margin-bottom:6px;letter-spacing:1px">ملف تقييم مفصل — ديوان FM / قسم الأخبار</div>
       <div style="font-size:26px;font-weight:900;margin-bottom:6px">تقرير الأداء الشهري</div>
       <div style="font-size:15px;opacity:0.9">${monthLabel}</div>
     </div>
@@ -2445,7 +2447,7 @@ window.exportReporterPDF = async (reporterId, reporterName, month) => {
         <div style="background:#fffbeb;border:1px solid #f59e0b;border-radius:10px;padding:16px">${recoHTML}</div>`:''}
 
       <div style="margin-top:28px;padding-top:14px;border-top:1px solid #e2e8f0;text-align:center;font-size:10px;color:#94a3b8">
-        ديوان FM — وثيقة داخلية سرية — المقيمون مجهولو الهوية — غير مخصصة للتوزيع — ${new Date().toLocaleDateString('ar-TN')}
+        ديوان FM — ملف تقييم مفصل داخلي — المقيمون مجهولو الهوية — غير مخصصة للتوزيع — ${new Date().toLocaleDateString('ar-TN')}
       </div>
     </div>`;
 
