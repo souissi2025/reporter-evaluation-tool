@@ -540,6 +540,18 @@ tr:hover td{background:var(--surface2)}
         <div id="adminMessagesList"></div>
       </div>
 
+      <div class="card admin-evaluation-report-card">
+        <div class="card-header">
+          <div class="card-title">📑 التقرير الشهري الشامل لتقييمات المراسلين</div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <input type="month" id="adminEvaluationReportMonth" style="padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:'Cairo',sans-serif;font-weight:700;color:var(--primary)">
+            <button class="btn btn-danger" onclick="exportAdminMonthlyEvaluationsPDF()" style="width:auto;padding:8px 14px">📄 حفظ PDF سري</button>
+          </div>
+        </div>
+        <p style="color:var(--muted);font-size:.82rem;line-height:1.8;margin-bottom:12px">يتضمن التقرير كل مراسل، وكل صحفي قام بتقييمه، والنتيجة النهائية، وعلامات المعايير والتعليلات. هذا التقرير متاح لقسم الإدارة فقط.</p>
+        <div id="adminEvaluationReportStatus" style="font-size:.82rem;color:var(--muted)">اختر الشهر ثم اضغط «حفظ PDF سري» لإنشاء التقرير.</div>
+      </div>
+
       <!-- ===== جميع التقييمات ===== -->
       <div class="card">
         <div class="card-header">
@@ -1334,7 +1346,12 @@ function getRoleLabel(role){
   return normalized === "admin" ? "الإدارة" : normalized === "reporter" ? "مراسل" : "صحفي";
 }
 
+function isOwnerAccount(){
+  return (currentUser?.email || currentUserData?.email || "").toLowerCase() === OWNER_EMAIL || currentUserData?.protectedOwner === true;
+}
+
 function canEvaluate(){
+  if(isOwnerAccount()) return false;
   const normalized = normalizeRole(currentRole || currentUserData?.role);
   return normalized === "journalist" || normalized === "admin" || currentUserData?.canEvaluate === true;
 }
@@ -1437,6 +1454,10 @@ async function loadEvaluatePage(){
 document.getElementById("evalMonth").addEventListener("change",()=>{loadEvaluatePage();loadHome();});
 
 window.selectReporter = async (id, name, alreadyEval) => {
+  if(!canEvaluate()){
+    alert(isOwnerAccount() ? "حساب المالك مخصص للإدارة ولا يملك صلاحية التقييم. استخدم حسابك الصحفي الشخصي للتقييم." : "هذا الحساب لا يملك صلاحية التقييم.");
+    return;
+  }
   selectedReporterId = id;
   document.getElementById("criteriaFormTitle").textContent = `تقييم: ${name}`;
   scores = {}; justifications = {};
@@ -1474,13 +1495,14 @@ function renderCriteriaForm(){
 }
 
 window.setScore = (id, val, btn) => {
+  if(!canEvaluate()) return;
   scores[id] = val;
   btn.closest(".score-inputs").querySelectorAll(".score-btn").forEach(b=>b.classList.remove("selected"));
   btn.classList.add("selected");
   updateTotal();
 };
 
-window.setJustification = (id, val) => { justifications[id] = val; };
+window.setJustification = (id, val) => { if(canEvaluate()) justifications[id] = val; };
 
 function updateTotal(){
   let total = 0;
@@ -1732,6 +1754,8 @@ async function loadAdmin(){
   const ym = now.toISOString().slice(0,7);
   const adminMonthEl = document.getElementById("adminEvalsMonth");
   if(!adminMonthEl.value) adminMonthEl.value = ym;
+  const adminEvaluationReportMonth = document.getElementById("adminEvaluationReportMonth");
+  if(adminEvaluationReportMonth && !adminEvaluationReportMonth.value) adminEvaluationReportMonth.value = ym;
 
   // تعبئة فلتر المراسلين
   const filterSel = document.getElementById("adminEvalsReporterFilter");
@@ -1816,6 +1840,67 @@ window.loadAllEvals = async function(){
         </table>
       </div>`;
   }).join("");
+};
+
+window.exportAdminMonthlyEvaluationsPDF = async () => {
+  if(currentRole !== "admin"){
+    alert("هذا التقرير متاح لحسابات الإدارة فقط.");
+    return;
+  }
+  if(!window.html2canvas || !window.jspdf){
+    alert("مكتبات PDF غير متاحة. تحقق من الاتصال بالإنترنت ثم أعد المحاولة.");
+    return;
+  }
+  const month = document.getElementById("adminEvaluationReportMonth")?.value || new Date().toISOString().slice(0,7);
+  const status = document.getElementById("adminEvaluationReportStatus");
+  if(status) status.textContent = "⏳ جارٍ جمع التقييمات وإنشاء التقرير السري...";
+  try{
+    const [reporters, evaluationsSnap] = await Promise.all([
+      getReporters(),
+      getDocs(query(collection(db,"evaluations"), where("month","==",month)))
+    ]);
+    const evaluations = evaluationsSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const grouped = {};
+    reporters.forEach(r=>grouped[r.id]=[]);
+    evaluations.forEach(e=>{ if(!grouped[e.reporterId]) grouped[e.reporterId]=[]; grouped[e.reporterId].push(e); });
+    const monthLabel = getMapMonthLabel(month);
+    const totalReporters = reporters.length;
+    const evaluatedReporters = reporters.filter(r=>grouped[r.id]?.length).length;
+    const avg = evaluations.length ? (evaluations.reduce((sum,e)=>sum + Number(e.total||0),0) / evaluations.length).toFixed(1) : "—";
+    const reporterSections = reporters.map((reporter,index)=>{
+      const reporterEvals = grouped[reporter.id] || [];
+      const reporterAvg = reporterEvals.length ? (reporterEvals.reduce((sum,e)=>sum + Number(e.total||0),0)/reporterEvals.length).toFixed(1) : "—";
+      const evaluationBlocks = reporterEvals.length ? reporterEvals.map((evaluation,evalIndex)=>`<div style="border:1px solid #cbd5e1;border-radius:10px;margin-bottom:14px;overflow:hidden;page-break-inside:avoid">
+        <div style="background:#f0fdfa;border-bottom:1px solid #99e6db;padding:12px 14px;display:flex;justify-content:space-between;gap:12px;align-items:center">
+          <div><strong style="color:#0f766e">تقييم الصحفي: ${evaluation.evaluatorName || "صحفي غير مسمى"}</strong><div style="font-size:11px;color:#64748b;margin-top:4px">التقييم رقم ${evalIndex+1} — ${evaluation.evaluatorRole === "admin" ? "إدارة" : "صحفي"}</div></div>
+          <div style="font-size:18px;font-weight:900;color:#0d9488">${Number(evaluation.total||0).toFixed(1)}/100<div style="font-size:10px;color:#64748b;text-align:center">${evaluation.classification || getClass(Number(evaluation.total||0))}</div></div>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:11px;direction:rtl"><thead><tr style="background:#f8fafc"><th style="padding:8px;text-align:right;border-bottom:1px solid #e2e8f0">المعيار</th><th style="padding:8px;text-align:center;border-bottom:1px solid #e2e8f0">العلامة</th><th style="padding:8px;text-align:center;border-bottom:1px solid #e2e8f0">الوزن</th><th style="padding:8px;text-align:right;border-bottom:1px solid #e2e8f0">التعليل</th></tr></thead><tbody>${CRITERIA.map(c=>`<tr><td style="padding:8px;border-bottom:1px solid #eef2f7;font-weight:700">${c.name}</td><td style="padding:8px;text-align:center;border-bottom:1px solid #eef2f7;font-weight:900;color:#0f766e">${evaluation.scores?.[c.id] || 0}/10</td><td style="padding:8px;text-align:center;border-bottom:1px solid #eef2f7;color:#64748b">${c.weight}%</td><td style="padding:8px;border-bottom:1px solid #eef2f7;line-height:1.6">${evaluation.justifications?.[c.id] || "—"}</td></tr>`).join("")}</tbody></table>
+      </div>`).join("") : `<div style="padding:18px;background:#fffbeb;border:1px dashed #f59e0b;border-radius:9px;color:#92400e;font-size:12px">لم يُسجّل أي تقييم لهذا المراسل خلال الشهر المحدد.</div>`;
+      return `<section style="margin-bottom:22px;page-break-inside:avoid"><div style="background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;padding:14px 18px;border-radius:10px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:18px;font-weight:900">${index+1}. ${reporter.name}</div><div style="font-size:11px;opacity:.85;margin-top:4px">${reporter.region||""}</div></div><div style="text-align:left;font-size:12px">${reporterEvals.length} تقييم<br><strong style="font-size:16px">متوسط ${reporterAvg}</strong></div></div>${evaluationBlocks}</section>`;
+    }).join("");
+    const container = document.createElement("div");
+    container.style.cssText = "width:1000px;font-family:Cairo,Arial,sans-serif;direction:rtl;background:#fff;color:#1e293b;position:fixed;top:-10000px;left:-10000px;padding:0";
+    container.innerHTML = `<div style="background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;padding:38px 42px;text-align:center"><div style="font-size:12px;opacity:.8;margin-bottom:8px">وثيقة سرية — للإدارة فقط — ديوان FM</div><div style="font-size:27px;font-weight:900;margin-bottom:8px">التقرير الشهري الشامل لتقييمات المراسلين</div><div style="font-size:17px">${monthLabel}</div></div><div style="padding:28px 34px"><div style="display:flex;gap:12px;margin-bottom:24px"><div style="flex:1;text-align:center;background:#f0fdfa;border:1px solid #99e6db;border-radius:9px;padding:12px"><div style="font-size:11px;color:#0f766e">عدد المراسلين</div><strong style="font-size:22px;color:#0d9488">${totalReporters}</strong></div><div style="flex:1;text-align:center;background:#f0fdfa;border:1px solid #99e6db;border-radius:9px;padding:12px"><div style="font-size:11px;color:#0f766e">مراسلون تم تقييمهم</div><strong style="font-size:22px;color:#0d9488">${evaluatedReporters}</strong></div><div style="flex:1;text-align:center;background:#f0fdfa;border:1px solid #99e6db;border-radius:9px;padding:12px"><div style="font-size:11px;color:#0f766e">عدد التقييمات</div><strong style="font-size:22px;color:#0d9488">${evaluations.length}</strong></div><div style="flex:1;text-align:center;background:#f0fdfa;border:1px solid #99e6db;border-radius:9px;padding:12px"><div style="font-size:11px;color:#0f766e">المتوسط العام</div><strong style="font-size:22px;color:#0d9488">${avg}</strong></div></div>${reporterSections}<div style="margin-top:24px;padding-top:12px;border-top:1px solid #cbd5e1;text-align:center;color:#64748b;font-size:10px">سري — لا يسمح بتداول هذا التقرير خارج حسابات الإدارة — ${new Date().toLocaleDateString("ar-TN")}</div></div>`;
+    document.body.appendChild(container);
+    const canvas = await html2canvas(container,{scale:2,useCORS:true,backgroundColor:"#fff",logging:false});
+    const {jsPDF} = window.jspdf;
+    const doc = new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
+    const pageW=210, pageH=297, imgW=pageW, imgH=(canvas.height*imgW)/canvas.width;
+    const imgData=canvas.toDataURL("image/jpeg",.94);
+    doc.addImage(imgData,"JPEG",0,0,imgW,imgH);
+    let remaining=imgH-pageH;
+    while(remaining>0){ doc.addPage(); doc.addImage(imgData,"JPEG",0,-(imgH-remaining),imgW,imgH); remaining-=pageH; }
+    doc.save(`تقرير-تقييمات-المراسلين-${month}.pdf`);
+    document.body.removeChild(container);
+    if(status) status.textContent = `✅ تم إنشاء التقرير السري لشهر ${monthLabel}.`;
+  }catch(error){
+    console.error("exportAdminMonthlyEvaluationsPDF",error);
+    const hidden = document.querySelector('body > div[style*="top: -10000px"]');
+    if(hidden) hidden.remove();
+    if(status) status.textContent = "تعذر إنشاء التقرير.";
+    alert("تعذر إنشاء تقرير PDF: " + (error.code || error.message || error));
+  }
 };
 
 window.openAddReporter = () => document.getElementById("addReporterModal").classList.add("active");
