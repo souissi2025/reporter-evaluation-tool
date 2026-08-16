@@ -696,13 +696,23 @@ onAuthStateChanged(auth, async user => {
         try{
           let recoveredRole = recoveryRole;
           let recoveredReporterId = null;
+          let reporterLookupBlocked = false;
           if(!recoveredRole || recoveredRole === "reporter"){
-            const reporterMatches = await getDocs(query(collection(db,"reporters"), where("name","==",recoveryName)));
-            if(reporterMatches.size === 1){
-              recoveredReporterId = reporterMatches.docs[0].id;
-              recoveredRole = "reporter";
-            }else if(recoveryRole === "reporter"){
-              recoveredRole = null;
+            try{
+              const reporterMatches = await getDocs(query(collection(db,"reporters"), where("name","==",recoveryName)));
+              if(reporterMatches.size === 1){
+                recoveredReporterId = reporterMatches.docs[0].id;
+                recoveredRole = "reporter";
+              }else if(recoveryRole === "reporter" && reporterMatches.size > 1){
+                recoveredRole = null;
+              }else if(!recoveryRole && reporterMatches.size === 0){
+                recoveredRole = null;
+              }
+            }catch(reporterLookupError){
+              reporterLookupBlocked = true;
+              // لا نمنع دخول الحساب بسبب منع قراءة البطاقة؛ يمكن للمدير ربطها لاحقاً.
+              if(!recoveryRole) recoveredRole = "reporter";
+              console.warn("تعذر قراءة بطاقة المراسل أثناء الاسترجاع:", reporterLookupError);
             }
           }
           if(!recoveredRole || !SUPPORTED_ACCOUNT_ROLES.includes(recoveredRole)){
@@ -710,8 +720,15 @@ onAuthStateChanged(auth, async user => {
             showAuthError("لم يتم إعداد دور هذا الحساب بعد. اطلب من المدير إصلاح بطاقة الحساب.");
             return;
           }
-          currentUserData = {name:recoveryName, username:recoveryName, email:user.email, role:recoveredRole, reporterId:recoveredReporterId, mustChangePassword:false, recoveredAccount:true, createdAt:serverTimestamp()};
-          await setDoc(doc(db,"users",user.uid), currentUserData, {merge:true});
+          currentUserData = {name:recoveryName, username:recoveryName, email:user.email, role:recoveredRole, reporterId:recoveredReporterId, needsReporterLink:recoveredRole === "reporter" && !recoveredReporterId, reporterLookupBlocked, mustChangePassword:false, recoveredAccount:true, createdAt:serverTimestamp()};
+          try{
+            await setDoc(doc(db,"users",user.uid), currentUserData, {merge:true});
+          }catch(userSetupError){
+            console.error("user setup recovery", userSetupError);
+            await signOut(auth);
+            showAuthError("تعذر حفظ إعداد الحساب. اطلب من المدير السماح بإنشاء ملف المستخدم.");
+            return;
+          }
           if(recoveredReporterId){
             try{
               await updateDoc(doc(db,"reporters",recoveredReporterId), {linkedUserId:user.uid, linkedEmail:user.email, updatedAt:serverTimestamp()});
@@ -775,7 +792,10 @@ function internalEmailForName(name, role="legacy"){
 }
 
 function candidateInternalEmailsForName(name){
-  return [internalEmailForName(name), ...SUPPORTED_ACCOUNT_ROLES.map(role=>internalEmailForName(name,role))];
+  const normalized = String(name || "").trim().normalize("NFKC");
+  const isKnownReporter = MAP_REPORTERS.some(item => String(item.reporter || "").trim().normalize("NFKC") === normalized);
+  const roleOrder = isKnownReporter ? ["reporter","journalist","admin"] : ["journalist","admin","reporter"];
+  return [...roleOrder.map(role=>internalEmailForName(normalized,role)), internalEmailForName(normalized)];
 }
 
 function roleFromInternalEmail(email){
