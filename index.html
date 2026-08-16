@@ -212,6 +212,13 @@ tr:hover td{background:var(--surface2)}
 .map-month-control label{font-size:.86rem;font-weight:700;color:var(--text)}
 .map-month-control input{padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:'Cairo',sans-serif;color:var(--primary);font-weight:700;background:var(--surface)}
 .map-month-control .map-month-hint{font-size:.78rem;color:var(--muted);margin-right:auto}
+.map-export-panel{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#f0fdfa;border:1.5px solid #99e6db;border-radius:12px;padding:13px 16px;margin-bottom:18px}
+.map-export-panel .export-title{font-weight:800;color:var(--primary-dark);margin-left:auto}
+.map-export-panel .export-note{width:100%;font-size:.76rem;color:var(--muted);line-height:1.7}
+.map-export-btn{width:auto!important;padding:8px 14px!important;font-size:.82rem!important;white-space:nowrap}
+.map-export-btn.excel{background:#166534!important;color:#fff!important}
+.map-export-btn.pdf{background:#b91c1c!important;color:#fff!important}
+.map-export-btn.whatsapp{background:#15803d!important;color:#fff!important}
 .map-admin-panel{background:#fffbeb;border:1.5px solid #f59e0b;border-radius:14px;padding:20px;margin-bottom:20px}
 .map-admin-panel .card-header{margin-bottom:12px}
 .map-admin-panel .card-title{color:#92400e}
@@ -233,6 +240,7 @@ tr:hover td{background:var(--surface2)}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
         body { font-family: 'Cairo', 'Arial', sans-serif !important; }
 </style></head>
@@ -361,6 +369,13 @@ tr:hover td{background:var(--surface2)}
         <label for="mapStatsMonth">📅 الشهر المعروض:</label>
         <input type="month" id="mapStatsMonth" onchange="loadMapStats()">
         <span class="map-month-hint">الأرقام الظاهرة على الخريطة تخص الشهر المحدد.</span>
+      </div>
+      <div class="map-export-panel" aria-label="تصدير التقرير الشهري">
+        <span class="export-title">📄 ملف تقرير خريطة المراسلين</span>
+        <button class="btn map-export-btn excel" onclick="exportMapMonthlyExcel()">📊 حفظ Excel</button>
+        <button class="btn map-export-btn pdf" onclick="exportMapMonthlyPDF()">📄 حفظ PDF</button>
+        <button class="btn map-export-btn whatsapp" onclick="shareMapMonthlyWhatsApp()">🟢 إرسال عبر WhatsApp</button>
+        <span class="export-note">يتم إنشاء التقرير للشهر المحدد أعلاه. زر WhatsApp يفتح رسالة جاهزة بالملخص؛ بعد تنزيل Excel أو PDF يمكنك إرفاق الملف داخل المحادثة.</span>
       </div>
       <div id="mapAdminPanel" class="map-admin-panel" style="display:none">
         <div class="card-header">
@@ -1105,6 +1120,137 @@ window.saveMonthlyMapStats = async () => {
     console.error("saveMonthlyMapStats", error);
     alert(`تعذر حفظ المعطيات. السبب: ${error.code || error.message}`);
   }
+};
+
+function getMapMonthLabel(month){
+  const [year, monthNumber] = String(month || "").split("-");
+  const names = ["", "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+  return year && monthNumber ? `${names[Number(monthNumber)] || monthNumber} ${year}` : month;
+}
+
+function getMapMonthlyReportRows(){
+  const month = getCurrentMapMonth();
+  return mapDirectory.map((item, index)=>{
+    const stats = getMapStats(item);
+    return {
+      "الترتيب": index + 1,
+      "الولاية": item.governorate,
+      "الولاية الأصلية": item.parentGovernorate || item.governorate,
+      "المراسل": item.reporter,
+      "المراسلات الإخبارية": stats.newsCount,
+      "الفيديوهات": stats.videoCount,
+      "الشهر": getMapMonthLabel(month)
+    };
+  });
+}
+
+function mapReportFileName(extension){
+  return `تقرير-خريطة-المراسلين-${getCurrentMapMonth()}.${extension}`;
+}
+
+function createMapMonthlyWorkbook(){
+  if(!window.XLSX) throw new Error("مكتبة Excel غير متاحة");
+  const month = getCurrentMapMonth();
+  const rows = getMapMonthlyReportRows();
+  const totalNews = rows.reduce((sum,row)=>sum + Number(row["المراسلات الإخبارية"] || 0), 0);
+  const totalVideos = rows.reduce((sum,row)=>sum + Number(row["الفيديوهات"] || 0), 0);
+  const summary = [
+    {"البيان":"تقرير خريطة المراسلين الشهري","القيمة":getMapMonthLabel(month)},
+    {"البيان":"إجمالي المراسلات الإخبارية","القيمة":totalNews},
+    {"البيان":"إجمالي الفيديوهات","القيمة":totalVideos},
+    {"البيان":"عدد المراسلين","القيمة":rows.length}
+  ];
+  const workbook = XLSX.utils.book_new();
+  const summarySheet = XLSX.utils.json_to_sheet(summary);
+  const detailsSheet = XLSX.utils.json_to_sheet(rows);
+  summarySheet["!cols"] = [{wch:34},{wch:26}];
+  detailsSheet["!cols"] = [{wch:10},{wch:20},{wch:20},{wch:28},{wch:24},{wch:15},{wch:18}];
+  XLSX.utils.book_append_sheet(workbook, summarySheet, "ملخص الشهر");
+  XLSX.utils.book_append_sheet(workbook, detailsSheet, "تفاصيل المراسلين");
+  return workbook;
+}
+
+window.exportMapMonthlyExcel = () => {
+  try{
+    const workbook = createMapMonthlyWorkbook();
+    XLSX.writeFile(workbook, mapReportFileName("xlsx"));
+  }catch(error){
+    console.error("exportMapMonthlyExcel", error);
+    alert("تعذر إنشاء ملف Excel: " + (error.message || error));
+  }
+};
+
+function buildMapMonthlyReportHTML(){
+  const month = getCurrentMapMonth();
+  const rows = getMapMonthlyReportRows();
+  const totalNews = rows.reduce((sum,row)=>sum + Number(row["المراسلات الإخبارية"] || 0), 0);
+  const totalVideos = rows.reduce((sum,row)=>sum + Number(row["الفيديوهات"] || 0), 0);
+  return `<div style="width:1100px;font-family:Cairo,Arial,sans-serif;direction:rtl;background:#fff;color:#1e293b">
+    <div style="background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;padding:34px 42px;text-align:center">
+      <div style="font-size:13px;opacity:.8;margin-bottom:8px">ديوان FM — قسم الأخبار</div>
+      <div style="font-size:29px;font-weight:900;margin-bottom:8px">تقرير خريطة المراسلين</div>
+      <div style="font-size:18px;opacity:.95">${getMapMonthLabel(month)}</div>
+    </div>
+    <div style="padding:26px 34px">
+      <div style="display:flex;gap:14px;margin-bottom:22px">
+        <div style="flex:1;background:#f0fdfa;border:1px solid #99e6db;border-radius:10px;padding:16px;text-align:center"><div style="color:#0f766e;font-weight:700">إجمالي المراسلات</div><strong style="font-size:25px;color:#0d9488">${totalNews}</strong></div>
+        <div style="flex:1;background:#f0fdfa;border:1px solid #99e6db;border-radius:10px;padding:16px;text-align:center"><div style="color:#0f766e;font-weight:700">إجمالي الفيديوهات</div><strong style="font-size:25px;color:#0d9488">${totalVideos}</strong></div>
+        <div style="flex:1;background:#f0fdfa;border:1px solid #99e6db;border-radius:10px;padding:16px;text-align:center"><div style="color:#0f766e;font-weight:700">عدد المراسلين</div><strong style="font-size:25px;color:#0d9488">${rows.length}</strong></div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+        <thead><tr style="background:#0d9488;color:#fff"><th style="padding:11px">#</th><th style="padding:11px;text-align:right">الولاية</th><th style="padding:11px;text-align:right">المراسل</th><th style="padding:11px">المراسلات الإخبارية</th><th style="padding:11px">الفيديوهات</th></tr></thead>
+        <tbody>${rows.map((row,index)=>`<tr style="background:${index%2===0?"#fff":"#f8fafc"}"><td style="padding:10px;text-align:center;border-bottom:1px solid #e2e8f0">${row["الترتيب"]}</td><td style="padding:10px;border-bottom:1px solid #e2e8f0">${row["الولاية"]}${row["الولاية الأصلية"] !== row["الولاية"] ? ` <small>(${row["الولاية الأصلية"]})</small>` : ""}</td><td style="padding:10px;border-bottom:1px solid #e2e8f0;font-weight:700">${row["المراسل"]}</td><td style="padding:10px;text-align:center;border-bottom:1px solid #e2e8f0;font-weight:800;color:#0f766e">${row["المراسلات الإخبارية"]}</td><td style="padding:10px;text-align:center;border-bottom:1px solid #e2e8f0;font-weight:800;color:#0f766e">${row["الفيديوهات"]}</td></tr>`).join("")}</tbody>
+      </table>
+      <div style="margin-top:24px;padding-top:12px;border-top:1px solid #cbd5e1;text-align:center;color:#64748b;font-size:11px">تم إنشاء التقرير من خريطة المراسلين — ${new Date().toLocaleDateString("ar-TN")}</div>
+    </div>
+  </div>`;
+}
+
+window.exportMapMonthlyPDF = async () => {
+  if(!window.html2canvas || !window.jspdf){ alert("مكتبات PDF غير متاحة. تحقق من الاتصال بالإنترنت ثم أعد المحاولة."); return; }
+  const container = document.createElement("div");
+  container.style.cssText = "position:fixed;top:-10000px;left:-10000px;background:#fff;z-index:-1";
+  container.innerHTML = buildMapMonthlyReportHTML();
+  document.body.appendChild(container);
+  try{
+    const canvas = await html2canvas(container,{scale:2,useCORS:true,backgroundColor:"#fff",logging:false});
+    const {jsPDF} = window.jspdf;
+    const doc = new jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
+    const pageW=297, pageH=210, imgW=pageW, imgH=(canvas.height*imgW)/canvas.width;
+    const imgData=canvas.toDataURL("image/jpeg",.94);
+    doc.addImage(imgData,"JPEG",0,0,imgW,imgH);
+    let remaining=imgH-pageH;
+    while(remaining>0){ doc.addPage(); doc.addImage(imgData,"JPEG",0,-(imgH-remaining),imgW,imgH); remaining-=pageH; }
+    doc.save(mapReportFileName("pdf"));
+  }catch(error){
+    console.error("exportMapMonthlyPDF",error);
+    alert("تعذر إنشاء ملف PDF: " + (error.message || error));
+  }finally{
+    if(document.body.contains(container)) document.body.removeChild(container);
+  }
+};
+
+window.shareMapMonthlyWhatsApp = async () => {
+  const month = getCurrentMapMonth();
+  const rows = getMapMonthlyReportRows();
+  const totalNews = rows.reduce((sum,row)=>sum + Number(row["المراسلات الإخبارية"] || 0), 0);
+  const totalVideos = rows.reduce((sum,row)=>sum + Number(row["الفيديوهات"] || 0), 0);
+  const message = `تقرير خريطة المراسلين — ${getMapMonthLabel(month)}\n\nإجمالي المراسلات الإخبارية: ${totalNews}\nإجمالي الفيديوهات: ${totalVideos}\nعدد المراسلين: ${rows.length}\n\n` + rows.map(row=>`${row["الولاية"]} — ${row["المراسل"]}: أخبار ${row["المراسلات الإخبارية"]} | فيديو ${row["الفيديوهات"]}`).join("\n");
+  try{
+    if(window.XLSX && navigator.share && navigator.canShare){
+      const workbook = createMapMonthlyWorkbook();
+      const bytes = XLSX.write(workbook,{bookType:"xlsx",type:"array"});
+      const file = new File([bytes],mapReportFileName("xlsx"),{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+      if(navigator.canShare({files:[file]})){
+        await navigator.share({title:`تقرير المراسلين — ${getMapMonthLabel(month)}`,text:message,files:[file]});
+        return;
+      }
+    }
+  }catch(error){
+    if(error?.name === "AbortError") return;
+    console.warn("native share unavailable",error);
+  }
+  window.open(`https://wa.me/?text=${encodeURIComponent(message)}`,"_blank","noopener,noreferrer");
 };
 
 window.selectMapReporter = (id) => {
