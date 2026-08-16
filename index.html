@@ -688,9 +688,48 @@ onAuthStateChanged(auth, async user => {
         await setDoc(doc(db,"users",user.uid), {...currentUserData, createdAt:serverTimestamp()}, {merge:true});
       }
     } else if(!snap.exists()){
-      await signOut(auth);
-      showAuthError("لم يتم إعداد هذا الحساب بعد. تواصل مع المدير.");
-      return;
+      // استرجاع عام للحسابات التي أُنشئت في Authentication ثم توقّف التسجيل قبل إنشاء users.
+      const recoveryName = String(user.displayName || "").trim().normalize("NFKC");
+      const recoveryRole = roleFromInternalEmail(user.email);
+      const isInternalAccount = (user.email || "").endsWith(`@${INTERNAL_EMAIL_DOMAIN}`);
+      if(isInternalAccount && recoveryName){
+        try{
+          let recoveredRole = recoveryRole;
+          let recoveredReporterId = null;
+          if(!recoveredRole || recoveredRole === "reporter"){
+            const reporterMatches = await getDocs(query(collection(db,"reporters"), where("name","==",recoveryName)));
+            if(reporterMatches.size === 1){
+              recoveredReporterId = reporterMatches.docs[0].id;
+              recoveredRole = "reporter";
+            }else if(recoveryRole === "reporter"){
+              recoveredRole = null;
+            }
+          }
+          if(!recoveredRole || !SUPPORTED_ACCOUNT_ROLES.includes(recoveredRole)){
+            await signOut(auth);
+            showAuthError("لم يتم إعداد دور هذا الحساب بعد. اطلب من المدير إصلاح بطاقة الحساب.");
+            return;
+          }
+          currentUserData = {name:recoveryName, username:recoveryName, email:user.email, role:recoveredRole, reporterId:recoveredReporterId, mustChangePassword:false, recoveredAccount:true, createdAt:serverTimestamp()};
+          await setDoc(doc(db,"users",user.uid), currentUserData, {merge:true});
+          if(recoveredReporterId){
+            try{
+              await updateDoc(doc(db,"reporters",recoveredReporterId), {linkedUserId:user.uid, linkedEmail:user.email, updatedAt:serverTimestamp()});
+            }catch(linkError){
+              console.warn("تم إنشاء ملف المستخدم، وتعذر تحديث رابط بطاقة المراسل بسبب قواعد Firestore:", linkError);
+            }
+          }
+        }catch(recoveryError){
+          console.error("account recovery", recoveryError);
+          await signOut(auth);
+          showAuthError("تعذر استرجاع إعداد الحساب. اطلب من المدير التحقق من بطاقة الحساب.");
+          return;
+        }
+      }else{
+        await signOut(auth);
+        showAuthError("لم يتم إعداد هذا الحساب بعد. تواصل مع المدير.");
+        return;
+      }
     } else {
       currentUserData = snap.data();
     }
@@ -725,24 +764,47 @@ window.switchAuthTab = (tab) => {
 };
 
 const INTERNAL_EMAIL_DOMAIN = "diwanfm.local";
+const SUPPORTED_ACCOUNT_ROLES = ["reporter","journalist","admin"];
 
-function internalEmailForName(name){
+function internalEmailForName(name, role="legacy"){
   const source = String(name || "").trim().normalize("NFKC");
   let hash = 2166136261;
   for(const ch of source){ hash ^= ch.codePointAt(0); hash = Math.imul(hash, 16777619); }
-  return `user-${(hash >>> 0).toString(36)}@${INTERNAL_EMAIL_DOMAIN}`;
+  const suffix = SUPPORTED_ACCOUNT_ROLES.includes(role) ? `-${role}` : "";
+  return `user-${(hash >>> 0).toString(36)}${suffix}@${INTERNAL_EMAIL_DOMAIN}`;
+}
+
+function candidateInternalEmailsForName(name){
+  return [internalEmailForName(name), ...SUPPORTED_ACCOUNT_ROLES.map(role=>internalEmailForName(name,role))];
+}
+
+function roleFromInternalEmail(email){
+  const match = String(email || "").toLowerCase().match(/^user-[a-z0-9]+-(reporter|journalist|admin)@diwanfm\.local$/);
+  return match ? match[1] : null;
+}
+
+async function findReporterCardByName(name){
+  const normalizedName = String(name || "").trim().normalize("NFKC");
+  if(!normalizedName) return null;
+  const matches = await getDocs(query(collection(db,"reporters"), where("name","==",normalizedName)));
+  return matches.size === 1 ? matches.docs[0] : null;
 }
 
 window.doLogin = async () => {
   const identifier = document.getElementById("loginName").value.trim();
   const pass = document.getElementById("loginPassword").value;
   if(!identifier || !pass){ showAuthError("يرجى إدخال الاسم أو البريد الإلكتروني وكلمة السر"); return; }
-  try {
-    const email = identifier.includes("@") ? identifier.toLowerCase() : internalEmailForName(identifier);
-    await signInWithEmailAndPassword(auth, email, pass);
-  } catch(e) {
-    showAuthError("الاسم أو البريد الإلكتروني أو كلمة السر غير صحيحة.");
+  const candidates = identifier.includes("@") ? [identifier.toLowerCase()] : candidateInternalEmailsForName(identifier);
+  let lastError = null;
+  for(const email of candidates){
+    try{
+      await signInWithEmailAndPassword(auth, email, pass);
+      return;
+    }catch(error){
+      lastError = error;
+    }
   }
+  showAuthError(lastError?.code === "auth/too-many-requests" ? "تم تجاوز عدد المحاولات. حاول لاحقاً أو تواصل مع الإدارة." : "الاسم أو البريد الإلكتروني أو كلمة السر غير صحيحة.");
 };
 
 window.doRegister = async () => {
@@ -770,19 +832,24 @@ window.doRegister = async () => {
       }
       existingReporter = reporterMatches.docs[0];
     }
-    const email = internalEmailForName(name);
+    const email = internalEmailForName(name, role);
     const cred = await createUserWithEmailAndPassword(auth, email, pass);
     await updateProfile(cred.user, {displayName:name});
     let reporterId = null;
-    if(role === "reporter"){
-      reporterId = existingReporter.id;
-      await updateDoc(doc(db,"reporters",reporterId), {
-        linkedUserId:cred.user.uid, linkedEmail:email, updatedAt:serverTimestamp()
-      });
-    }
+    if(role === "reporter") reporterId = existingReporter.id;
+    // إنشاء users أولاً يمنع ظهور حساب Authentication بلا إعداد عند تعذر تحديث بطاقة المراسل.
     await setDoc(doc(db,"users",cred.user.uid), {
       name, username:name, email, role, reporterId, registrationCode:code, mustChangePassword:false, createdAt:serverTimestamp()
     });
+    if(role === "reporter"){
+      try{
+        await updateDoc(doc(db,"reporters",reporterId), {
+          linkedUserId:cred.user.uid, linkedEmail:email, updatedAt:serverTimestamp()
+        });
+      }catch(linkError){
+        console.warn("تم إنشاء الحساب، وتعذر تحديث رابط البطاقة:", linkError);
+      }
+    }
     isRegistering = false;
     await signOut(auth);
     switchAuthTab("login");
@@ -791,7 +858,11 @@ window.doRegister = async () => {
     showAuthError("✅ تم إنشاء الحساب. يمكنك الدخول الآن بالاسم وكلمة السر.");
   } catch(e) {
     isRegistering = false;
-    showAuthError("حدث خطأ أثناء إنشاء الحساب: " + (e.code || e.message));
+    try{ if(auth.currentUser) await signOut(auth); }catch(signOutError){ console.warn("تعذر إنهاء جلسة التسجيل الفاشل", signOutError); }
+    const friendly = e.code === "auth/email-already-in-use"
+      ? "هذا الحساب موجود مسبقاً. جرّب الدخول بالاسم وكلمة السر أو اطلب من المدير إصلاح الربط."
+      : "حدث خطأ أثناء إنشاء الحساب: " + (e.code || e.message);
+    showAuthError(friendly);
   }
 };
 
