@@ -270,9 +270,17 @@ tr:hover td{background:var(--surface2)}
         <input type="password" id="regPassword" placeholder="كلمة السر">
       </div>
       <div class="form-group">
-        <label>كود التسجيل</label>
+        <label>نوع الحساب</label>
+        <select id="regRole" style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:'Cairo',sans-serif;background:var(--surface);color:var(--text)">
+          <option value="reporter">مراسل</option>
+          <option value="journalist">صحفي</option>
+          <option value="admin">إدارة</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>كود التسجيل الخاص بالدور</label>
         <input type="text" id="regCode" placeholder="أدخل الكود الذي منحته لك الإدارة" autocomplete="off">
-        <p style="color:var(--muted);font-size:.75rem;margin-top:7px;line-height:1.7">الكود يحدد نوع الحساب تلقائياً. لا تحتاج إلى بريد إلكتروني.</p>
+        <p style="color:var(--muted);font-size:.75rem;margin-top:7px;line-height:1.7">يجب أن يطابق الكود نوع الحساب المختار. لا تحتاج إلى بريد إلكتروني.</p>
       </div>
       <button class="btn btn-primary" onclick="doRegister()">إنشاء الحساب</button>
     </div>
@@ -687,6 +695,10 @@ onAuthStateChanged(auth, async user => {
       if(!snap.exists() || snap.data()?.role !== "admin" || snap.data()?.protectedOwner !== true){
         await setDoc(doc(db,"users",user.uid), {...currentUserData, createdAt:serverTimestamp()}, {merge:true});
       }
+    } else if(snap.exists() && snap.data()?.accountStatus === "deleted"){
+      await signOut(auth);
+      showAuthError("تم حذف هذا الحساب من المنصة. تواصل مع المدير إذا كان الحذف بالخطأ.");
+      return;
     } else if(!snap.exists()){
       // استرجاع عام للحسابات التي أُنشئت في Authentication ثم توقّف التسجيل قبل إنشاء users.
       const recoveryName = String(user.displayName || "").trim().normalize("NFKC");
@@ -830,11 +842,15 @@ window.doLogin = async () => {
 window.doRegister = async () => {
   const name = document.getElementById("regName").value.trim();
   const pass = document.getElementById("regPassword").value;
+  const requestedRole = document.getElementById("regRole")?.value || "reporter";
   const code = document.getElementById("regCode").value.trim().toLowerCase();
-  const role = Object.keys(REGISTRATION_CODES).find(key => REGISTRATION_CODES[key] === code);
+  const roleFromCode = Object.keys(REGISTRATION_CODES).find(key => REGISTRATION_CODES[key] === code);
+  const role = requestedRole;
   if(!name || !pass || !code){ showAuthError("يرجى تعبئة الاسم وكلمة السر وكود التسجيل"); return; }
   if(pass.length < 6){ showAuthError("كلمة السر يجب أن تحتوي على 6 أحرف أو أرقام على الأقل"); return; }
-  if(!role){ showAuthError("كود التسجيل غير صحيح. اطلب الكود المناسب من الإدارة."); return; }
+  if(!SUPPORTED_ACCOUNT_ROLES.includes(requestedRole)){ showAuthError("نوع الحساب غير صحيح."); return; }
+  if(!roleFromCode){ showAuthError("كود التسجيل غير صحيح. اطلب الكود المناسب من الإدارة."); return; }
+  if(roleFromCode !== requestedRole){ showAuthError(`الكود المُدخل خاص بدور «${getRoleLabel(roleFromCode)}» وليس «${getRoleLabel(requestedRole)}». اختر الدور الصحيح أو اطلب الكود المناسب من الإدارة.`); return; }
   try {
     isRegistering = true;
     let existingReporter = null;
@@ -1476,17 +1492,17 @@ async function loadAdmin(){
     : `<div class="empty"><div class="empty-icon">👤</div><h3>لا يوجد مراسلون بعد</h3></div>`;
 
   const usersSnap = await getDocs(collection(db,"users"));
-  const users = usersSnap.docs.map(d=>({uid:d.id,...d.data()}));
-  const adminUsers = users.filter(u=>u.role==="admin").sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
-  const firstAdminUid = adminUsers[0]?.uid;
-
+  const users = usersSnap.docs.map(d=>({uid:d.id,...d.data()})).filter(u=>u.accountStatus !== "deleted");
   document.getElementById("usersList").innerHTML = users.map(u=>{
-    const isFirstAdmin = u.uid === firstAdminUid;
+    const isOwnerAccount = (u.email || "").toLowerCase() === OWNER_EMAIL || u.protectedOwner === true;
+    const isSelf = u.uid === currentUser?.uid;
     let actionBtn = "";
-    if(u.role !== "admin"){
-      actionBtn = `<button class="btn btn-danger" onclick="deleteUser('${u.uid}','${u.name.replace(/'/g,"\\'")}')" style="padding:6px 14px;font-size:0.82rem">🗑️ حذف</button>`;
-    } else if(isFirstAdmin){
-      actionBtn = `<span style="font-size:0.78rem;background:#d1fae5;color:#065f46;padding:4px 10px;border-radius:20px;font-weight:700">المدير الرئيسي</span>`;
+    if(isOwnerAccount){
+      actionBtn = `<span style="font-size:0.78rem;background:#d1fae5;color:#065f46;padding:4px 10px;border-radius:20px;font-weight:700">حساب المالك محمي</span>`;
+    }else if(isSelf){
+      actionBtn = `<span style="font-size:0.78rem;background:#fef3c7;color:#92400e;padding:4px 10px;border-radius:20px;font-weight:700">الحساب الحالي</span>`;
+    }else{
+      actionBtn = `<button class="btn btn-danger" onclick="deleteUser('${u.uid}','${String(u.name||u.email||"").replace(/'/g,"\\'")}','${u.role||""}')" style="padding:6px 14px;font-size:0.82rem">🗑️ حذف</button>`;
     }
     return `<div class="reporter-item">
       <div>
@@ -1615,23 +1631,35 @@ window.deleteReporter = async (id) => {
 };
 
 
-        window.deleteUser = async function(uid, name) {
+        window.deleteUser = async function(uid, name, role) {
             if (!currentUserData || currentUserData.role !== 'admin') return;
-            // التحقق من أنه ليس المدير الأول
-            const usersSnap2 = await getDocs(collection(db,"users"));
-            const allUsers = usersSnap2.docs.map(d=>({uid:d.id,...d.data()}));
-            const adminUsers2 = allUsers.filter(u=>u.role==="admin").sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
-            if(adminUsers2[0]?.uid === uid){
-                alert("⛔ لا يمكن حذف المدير الرئيسي للنظام.");
+            if(uid === currentUser?.uid){
+                alert("⛔ لا يمكنك حذف الحساب الذي تستخدمه حالياً.");
                 return;
             }
-            if (!confirm(`هل تريد حذف المستخدم "${name}"؟\nسيتم حذف حسابه وجميع تقييماته.\nلا يمكن التراجع عن هذا الإجراء.`)) return;
-            // حذف وثيقة المستخدم من Firestore (يمنعه من الدخول فوراً)
-            await deleteDoc(doc(db, 'users', uid));
-            // حذف جميع التقييمات التي أجراها هذا المستخدم
-            const evalSnap = await getDocs(query(collection(db,"evaluations"), where("evaluatorId","==", uid)));
-            for(const d of evalSnap.docs) await deleteDoc(d.ref);
-            await loadAdmin();
+            const targetSnap = await getDoc(doc(db,"users",uid));
+            const target = targetSnap.exists() ? {uid, ...targetSnap.data()} : {uid, name, role};
+            const isOwnerAccount = (target.email || "").toLowerCase() === OWNER_EMAIL || target.protectedOwner === true;
+            if(isOwnerAccount){
+                alert("⛔ لا يمكن حذف حساب مالك النظام.");
+                return;
+            }
+            const roleLabel = getRoleLabel(target.role || role);
+            const warning = target.role === "admin" ? "\n⚠️ هذا حساب إدارة وسيُزال من قائمة المستخدمين." : "";
+            if (!confirm(`هل تريد حذف المستخدم "${name}"؟\nالدور: ${roleLabel}.${warning}\nسيتم حذف ملفه من المنصة وتقييماته التي أنشأها.\nلا يمكن التراجع عن هذا الإجراء.`)) return;
+            try{
+              await setDoc(doc(db, 'users', uid), {accountStatus:"deleted", deletedAt:serverTimestamp(), deletedBy:currentUser.uid, deletedByName:currentUserData?.name||currentUser.email}, {merge:true});
+              const evalSnap = await getDocs(query(collection(db,"evaluations"), where("evaluatorId","==", uid)));
+              for(const d of evalSnap.docs) await deleteDoc(d.ref);
+              if(target.reporterId){
+                try{ await updateDoc(doc(db,"reporters",target.reporterId), {linkedUserId:deleteField(), linkedEmail:deleteField(), updatedAt:serverTimestamp()}); }catch(linkError){ console.warn("تعذر تنظيف رابط بطاقة المراسل", linkError); }
+              }
+              alert(`✅ تم تعطيل حساب ${roleLabel} وإزالته من قائمة المستخدمين.`);
+              await loadAdmin();
+            }catch(error){
+              console.error("deleteUser", error);
+              alert("تعذر حذف الحساب: " + (error.code || error.message));
+            }
         };
 
         window.copyJoinCode = () => {
