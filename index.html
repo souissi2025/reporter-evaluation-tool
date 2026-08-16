@@ -795,11 +795,11 @@ window.switchAuthTab = (tab) => {
 const INTERNAL_EMAIL_DOMAIN = "diwanfm.local";
 const SUPPORTED_ACCOUNT_ROLES = ["reporter","journalist","admin"];
 
-function internalEmailForName(name, role="legacy"){
+function internalEmailForName(name, role="legacy", version=1){
   const source = String(name || "").trim().normalize("NFKC");
   let hash = 2166136261;
   for(const ch of source){ hash ^= ch.codePointAt(0); hash = Math.imul(hash, 16777619); }
-  const suffix = SUPPORTED_ACCOUNT_ROLES.includes(role) ? `-${role}` : "";
+  const suffix = SUPPORTED_ACCOUNT_ROLES.includes(role) ? `-${role}${version > 1 ? `-v${version}` : ""}` : "";
   return `user-${(hash >>> 0).toString(36)}${suffix}@${INTERNAL_EMAIL_DOMAIN}`;
 }
 
@@ -807,11 +807,17 @@ function candidateInternalEmailsForName(name){
   const normalized = String(name || "").trim().normalize("NFKC");
   const isKnownReporter = MAP_REPORTERS.some(item => String(item.reporter || "").trim().normalize("NFKC") === normalized);
   const roleOrder = isKnownReporter ? ["reporter","journalist","admin"] : ["journalist","admin","reporter"];
-  return [...roleOrder.map(role=>internalEmailForName(normalized,role)), internalEmailForName(normalized)];
+  const candidates = [];
+  // تجربة الإصدارات الجديدة أولاً ثم الحسابات القديمة، حتى يعود الدخول دائماً للحساب النشط الأخير.
+  for(let version=1; version<=20; version++){
+    for(const role of roleOrder) candidates.push(internalEmailForName(normalized,role,version));
+  }
+  candidates.push(internalEmailForName(normalized));
+  return candidates;
 }
 
 function roleFromInternalEmail(email){
-  const match = String(email || "").toLowerCase().match(/^user-[a-z0-9]+-(reporter|journalist|admin)@diwanfm\.local$/);
+  const match = String(email || "").toLowerCase().match(/^user-[a-z0-9]+-(reporter|journalist|admin)(?:-v\d+)?@diwanfm\.local$/);
   return match ? match[1] : null;
 }
 
@@ -868,14 +874,39 @@ window.doRegister = async () => {
       }
       existingReporter = reporterMatches.docs[0];
     }
-    const email = internalEmailForName(name, role);
-    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+    // منع إنشاء حساب نشط ثانٍ بالاسم والدور نفسيهما إذا كان الحساب القديم ما زال فعالاً.
+    try{
+      const existingUsers = await getDocs(query(collection(db,"users"), where("name","==",name)));
+      const activeSameRole = existingUsers.docs.some(d=>d.data()?.role === role && d.data()?.accountStatus !== "deleted");
+      if(activeSameRole){
+        isRegistering = false;
+        showAuthError("يوجد حساب نشط بهذا الاسم والدور. استعمل الدخول أو اطلب من الإدارة فسخ الحساب أولاً.");
+        return;
+      }
+    }catch(userLookupError){
+      // إذا كانت القراءة محمية قبل تسجيل الدخول، نواصل التسجيل؛ قواعد Firestore تبقى المرجع النهائي.
+      console.warn("تعذر فحص الحسابات السابقة قبل التسجيل:", userLookupError);
+    }
+    let cred = null;
+    let email = "";
+    let accountVersion = 1;
+    for(let version=1; version<=20; version++){
+      email = internalEmailForName(name, role, version);
+      try{
+        cred = await createUserWithEmailAndPassword(auth, email, pass);
+        accountVersion = version;
+        break;
+      }catch(createError){
+        if(createError.code !== "auth/email-already-in-use") throw createError;
+      }
+    }
+    if(!cred) throw {code:"auth/account-version-limit"};
     await updateProfile(cred.user, {displayName:name});
     let reporterId = null;
     if(role === "reporter") reporterId = existingReporter.id;
     // إنشاء users أولاً يمنع ظهور حساب Authentication بلا إعداد عند تعذر تحديث بطاقة المراسل.
     await setDoc(doc(db,"users",cred.user.uid), {
-      name, username:name, email, role, reporterId, registrationCode:code, mustChangePassword:false, createdAt:serverTimestamp()
+      name, username:name, email, role, reporterId, accountVersion, accountStatus:"active", registrationCode:code, mustChangePassword:false, createdAt:serverTimestamp()
     });
     if(role === "reporter"){
       try{
@@ -896,8 +927,10 @@ window.doRegister = async () => {
     isRegistering = false;
     try{ if(auth.currentUser) await signOut(auth); }catch(signOutError){ console.warn("تعذر إنهاء جلسة التسجيل الفاشل", signOutError); }
     const friendly = e.code === "auth/email-already-in-use"
-      ? "هذا الحساب موجود مسبقاً. جرّب الدخول بالاسم وكلمة السر أو اطلب من المدير إصلاح الربط."
-      : "حدث خطأ أثناء إنشاء الحساب: " + (e.code || e.message);
+      ? "يوجد حساب نشط بهذا الاسم. استعمل الدخول أو اطلب من الإدارة فسخه قبل التسجيل من جديد."
+      : e.code === "auth/account-version-limit"
+        ? "تعذر إنشاء إصدار جديد للحساب. تواصل مع الإدارة."
+        : "حدث خطأ أثناء إنشاء الحساب: " + (e.code || e.message);
     showAuthError(friendly);
   }
 };
