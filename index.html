@@ -155,11 +155,92 @@ tr:hover td{background:var(--surface2)}
 .btn-chart:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(124,58,237,0.3)}
 .results-actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;align-items:center}
 .no-chart{text-align:center;padding:30px;color:var(--muted);font-size:0.9rem}
+
+/* ===== REPORTERS MAP ===== */
+.map-intro{background:linear-gradient(135deg,#ecfeff,#f0fdfa);border:1px solid #b6eee7;border-radius:14px;padding:18px 20px;margin-bottom:20px}
+.map-intro h2{font-size:1.2rem;color:var(--primary-dark);margin-bottom:6px}
+.map-intro p{color:var(--muted);font-size:.88rem;line-height:1.9}
+.map-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.map-toolbar input,.map-toolbar select{padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-family:'Cairo',sans-serif;font-size:.88rem;background:var(--surface);color:var(--text)}
+.map-toolbar input{min-width:220px;flex:1}
+.map-toolbar input:focus,.map-toolbar select:focus{outline:none;border-color:var(--primary)}
+.map-layout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr);gap:20px;align-items:start}
+.tunisia-map-card{background:linear-gradient(180deg,#f8fffe,#effcf9);border:1px solid #c7eee8;border-radius:14px;padding:14px;box-shadow:var(--shadow);overflow:hidden}
+.tunisia-map-card svg{width:100%;height:auto;display:block;min-height:500px}
+.map-land{fill:#ccfbf1;stroke:#0f766e;stroke-width:5;stroke-linejoin:round}
+.map-land-shadow{fill:none;stroke:rgba(13,148,136,.12);stroke-width:14;stroke-linejoin:round}
+.map-grid-line{stroke:rgba(13,148,136,.11);stroke-width:1;stroke-dasharray:5 8}
+.governorate-marker{cursor:pointer;outline:none}
+.governorate-marker circle{fill:var(--primary);stroke:#fff;stroke-width:4;transition:all .2s;filter:drop-shadow(0 3px 4px rgba(15,118,110,.28))}
+.governorate-marker:hover circle,.governorate-marker.active circle{fill:#f59e0b;stroke:#fff;stroke-width:5;r:16}
+.governorate-marker text{font-family:'Cairo',sans-serif;font-size:15px;font-weight:800;fill:#134e4a;text-anchor:middle;pointer-events:none}
+.governorate-marker .marker-name{font-size:12px;font-weight:700;fill:#475569}
+.map-legend{display:flex;align-items:center;justify-content:center;gap:8px;color:var(--muted);font-size:.78rem;margin-top:-4px}
+.map-legend-dot{width:11px;height:11px;background:var(--primary);border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px var(--primary)}
+.map-side-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;box-shadow:var(--shadow);min-height:100%}
+.map-side-card h3{font-size:1rem;color:var(--primary-dark);margin-bottom:16px}
+.map-selected{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;border-radius:12px;padding:18px;margin-bottom:18px;min-height:150px}
+.map-selected.empty-selected{background:var(--surface2);color:var(--muted);border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;text-align:center;font-size:.85rem;line-height:1.8}
+.map-selected .selected-governorate{font-size:.8rem;opacity:.85;margin-bottom:4px}
+.map-selected .selected-name{font-size:1.25rem;font-weight:900;margin-bottom:10px}
+.map-selected .selected-status{font-size:.78rem;background:rgba(255,255,255,.18);padding:4px 10px;border-radius:20px;display:inline-block}
+.map-list{display:grid;gap:10px;max-height:540px;overflow:auto;padding-left:2px}
+.map-list-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:all .2s}
+.map-list-item:hover,.map-list-item.active{border-color:var(--primary);background:#f0fdfa;transform:translateX(-2px)}
+.map-list-item strong{font-size:.88rem}.map-list-item span{display:block;color:var(--muted);font-size:.78rem;margin-top:2px}
+.map-list-pin{width:30px;height:30px;flex:0 0 30px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#ccfbf1;color:var(--primary-dark);font-weight:900;font-size:.82rem}
+.map-empty{padding:28px 14px;text-align:center;color:var(--muted);font-size:.85rem;background:var(--surface2);border-radius:10px}
+@media(max-width:860px){.map-layout{grid-template-columns:1fr}.tunisia-map-card svg{min-height:420px}.map-list{max-height:none}}
+@media(max-width:640px){.map-toolbar input{min-width:100%}.map-toolbar select{flex:1;min-width:145px}.tunisia-map-card{padding:8px}.tunisia-map-card svg{min-height:390px}.governorate-marker text{font-size:12px}.governorate-marker .marker-name{font-size:10px}}
+
+/* ===== REAL TUNISIA GOVERNORATES MAP & MONTHLY STATS ===== */
+.map-shape{fill:#e6f8f5;stroke:#5aa69d;stroke-width:1.6;stroke-linejoin:round;vector-effect:non-scaling-stroke;transition:fill .2s,stroke .2s,opacity .2s;cursor:pointer}
+.map-shape:hover{fill:#bff1e8;stroke:#0f766e;stroke-width:2.2}
+.map-shape.has-reporter{fill:#c9f3eb;stroke:#0f766e;stroke-width:2}
+.map-shape.selected{fill:#fcd98a;stroke:#b45309;stroke-width:2.8}
+.map-shape.filtered-out{opacity:.22}
+.map-shape.no-reporter{fill:#f1f8f7;stroke:#9ccdc6}
+.map-governorate-label{font-family:'Cairo',sans-serif;font-size:11px;font-weight:800;fill:#134e4a;text-anchor:middle;pointer-events:none;paint-order:stroke;stroke:#effcf9;stroke-width:3px;stroke-linejoin:round}
+.map-shape.no-reporter + .map-governorate-label{fill:#64748b;font-weight:600}
+.map-marker-pulse{fill:none;stroke:#f59e0b;stroke-width:2;opacity:.45;animation:mapPulse 2.2s ease-out infinite}
+@keyframes mapPulse{0%{r:13;opacity:.6}100%{r:24;opacity:0}}
+.map-marker-circle{fill:#0d9488;stroke:#fff;stroke-width:2.5;filter:drop-shadow(0 2px 3px rgba(15,118,110,.35));cursor:pointer}
+.map-marker-circle.active{fill:#f59e0b}
+.map-marker-metric{font-family:'Cairo',sans-serif;font-size:9px;font-weight:900;fill:#fff;text-anchor:middle;pointer-events:none}
+.map-metric-label{font-family:'Cairo',sans-serif;font-size:9px;font-weight:700;fill:#475569;text-anchor:middle;pointer-events:none;paint-order:stroke;stroke:#effcf9;stroke-width:2px}
+.map-month-control{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:18px;flex-wrap:wrap}
+.map-month-control label{font-size:.86rem;font-weight:700;color:var(--text)}
+.map-month-control input{padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:'Cairo',sans-serif;color:var(--primary);font-weight:700;background:var(--surface)}
+.map-month-control .map-month-hint{font-size:.78rem;color:var(--muted);margin-right:auto}
+.map-export-panel{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#f0fdfa;border:1.5px solid #99e6db;border-radius:12px;padding:13px 16px;margin-bottom:18px}
+.map-export-panel .export-title{font-weight:800;color:var(--primary-dark);margin-left:auto}
+.map-export-panel .export-note{width:100%;font-size:.76rem;color:var(--muted);line-height:1.7}
+.map-export-btn{width:auto!important;padding:8px 14px!important;font-size:.82rem!important;white-space:nowrap}
+.map-export-btn.excel{background:#166534!important;color:#fff!important}
+.map-export-btn.pdf{background:#b91c1c!important;color:#fff!important}
+.map-export-btn.whatsapp{background:#15803d!important;color:#fff!important}
+.map-admin-panel{background:#fffbeb;border:1.5px solid #f59e0b;border-radius:14px;padding:20px;margin-bottom:20px}
+.map-admin-panel .card-header{margin-bottom:12px}
+.map-admin-panel .card-title{color:#92400e}
+.map-admin-note{font-size:.82rem;color:#92400e;line-height:1.8;margin-bottom:14px}
+.map-stats-table-wrap{overflow-x:auto;border:1px solid #f5d58a;border-radius:10px;background:#fff}
+.map-stats-table{min-width:650px}
+.map-stats-table th{background:#fef3c7;color:#78350f;padding:10px 12px}
+.map-stats-table td{padding:8px 12px;background:#fff;border-bottom:1px solid #f8e7b0}
+.map-stats-table input{width:105px;padding:7px 8px;border:1.5px solid var(--border);border-radius:7px;font-family:'Cairo',sans-serif;text-align:center}
+.map-stats-table input:focus{outline:none;border-color:var(--primary)}
+.map-admin-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:14px;flex-wrap:wrap}
+.map-stats-summary{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:14px}
+.map-stat-box{background:rgba(255,255,255,.16);border-radius:9px;padding:8px;text-align:center}
+.map-stat-box strong{display:block;font-size:1.25rem;font-weight:900}.map-stat-box span{font-size:.72rem;opacity:.85}
+.map-updated{font-size:.72rem;color:var(--muted);margin-top:10px}
+@media(max-width:640px){.map-month-control .map-month-hint{width:100%;margin-right:0}.map-admin-panel{padding:14px}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
         body { font-family: 'Cairo', 'Arial', sans-serif !important; }
 </style></head>
@@ -197,9 +278,17 @@ tr:hover td{background:var(--surface2)}
         <input type="password" id="regPassword" placeholder="كلمة السر">
       </div>
       <div class="form-group">
-        <label>كود التسجيل</label>
+        <label>نوع الحساب</label>
+        <select id="regRole" style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:'Cairo',sans-serif;background:var(--surface);color:var(--text)">
+          <option value="reporter">مراسل</option>
+          <option value="journalist">صحفي</option>
+          <option value="admin">إدارة</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>كود التسجيل الخاص بالدور</label>
         <input type="text" id="regCode" placeholder="أدخل الكود الذي منحته لك الإدارة" autocomplete="off">
-        <p style="color:var(--muted);font-size:.75rem;margin-top:7px;line-height:1.7">الكود يحدد نوع الحساب تلقائياً. لا تحتاج إلى بريد إلكتروني.</p>
+        <p style="color:var(--muted);font-size:.75rem;margin-top:7px;line-height:1.7">يجب أن يطابق الكود نوع الحساب المختار. لا تحتاج إلى بريد إلكتروني.</p>
       </div>
       <button class="btn btn-primary" onclick="doRegister()">إنشاء الحساب</button>
     </div>
@@ -218,8 +307,9 @@ tr:hover td{background:var(--surface2)}
   </div>
   <div class="nav-tabs">
     <button class="nav-tab active" onclick="showPage('home')">🏠 الرئيسية</button>
+    <button class="nav-tab" onclick="showPage('map')">🗺️ خريطة المراسلين</button>
     <button class="nav-tab" id="evaluateTabBtn" onclick="showPage('evaluate')">✍️ تقييم شهري</button>
-    <button class="nav-tab" id="resultsTabBtn" onclick="showPage('results')">📈 تقييماتي</button>
+    <button class="nav-tab" id="resultsTabBtn" onclick="showPage('results')">📊 التقييمات</button>
     <button class="nav-tab" id="messagesTabBtn" onclick="showPage('messages')" style="display:none">💬 مراسلة الإدارة</button>
     <button class="nav-tab" id="adminTabBtn" onclick="showPage('admin')" style="display:none">⚙️ الإدارة</button>
   </div>
@@ -238,7 +328,7 @@ tr:hover td{background:var(--surface2)}
         </div>
         <div class="stat-card">
           <div class="stat-value" id="statMyEvals">0</div>
-          <div class="stat-label">تقييماتي هذا الشهر</div>
+          <div class="stat-label" id="statMyEvalsLabel">إجمالي التقييمات</div>
         </div>
         <div class="stat-card">
           <div class="stat-value" id="statAvg">—</div>
@@ -258,6 +348,74 @@ tr:hover td{background:var(--surface2)}
           <div class="detail-crit"><div class="detail-crit-name">القيمة المضافة</div><div class="detail-crit-score" style="font-size:1.1rem">من 10 × 15%</div></div>
           <div class="detail-crit"><div class="detail-crit-name">التفاعل والتواصل</div><div class="detail-crit-score" style="font-size:1.1rem">من 10 × 15%</div></div>
           <div class="detail-crit"><div class="detail-crit-name">المبادرة والإبداع</div><div class="detail-crit-score" style="font-size:1.1rem">من 10 × 10%</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORTERS MAP PAGE -->
+    <div id="mapPage" class="page">
+      <div class="map-intro">
+        <h2>🗺️ انتشار مراسلي ديوان FM</h2>
+        <p>توزيع المراسلين حسب الولايات والمناطق. اضغط على أي نقطة في الخريطة أو على بطاقة من القائمة لعرض التفاصيل.</p>
+      </div>
+      <div class="map-toolbar">
+        <input id="mapSearch" type="search" placeholder="🔎 ابحث عن ولاية أو اسم مراسل..." oninput="renderReporterMap()" autocomplete="off">
+        <select id="mapGovernorateFilter" onchange="renderReporterMap()">
+          <option value="">كل الولايات والمناطق</option>
+        </select>
+        <span id="mapCount" style="font-size:.82rem;color:var(--muted);font-weight:600"></span>
+      </div>
+      <div class="map-month-control">
+        <label for="mapStatsMonth">📅 الشهر المعروض:</label>
+        <input type="month" id="mapStatsMonth" onchange="loadMapStats()">
+        <span class="map-month-hint">الأرقام الظاهرة على الخريطة تخص الشهر المحدد.</span>
+      </div>
+      <div class="map-export-panel" aria-label="تصدير التقرير الشهري">
+        <span class="export-title">📄 ملف تقرير خريطة المراسلين</span>
+        <button class="btn map-export-btn excel" onclick="exportMapMonthlyExcel()">📊 حفظ Excel</button>
+        <button class="btn map-export-btn pdf" onclick="exportMapMonthlyPDF()">📄 حفظ PDF</button>
+        <button class="btn map-export-btn whatsapp" onclick="shareMapMonthlyWhatsApp()">🟢 إرسال عبر WhatsApp</button>
+        <span class="export-note">يتم إنشاء التقرير للشهر المحدد أعلاه. زر WhatsApp يفتح رسالة جاهزة بالملخص؛ بعد تنزيل Excel أو PDF يمكنك إرفاق الملف داخل المحادثة.</span>
+      </div>
+      <div id="mapAdminPanel" class="map-admin-panel" style="display:none">
+        <div class="card-header">
+          <div class="card-title">🔐 إدخال المعطيات الشهرية — المدير فقط</div>
+          <span style="font-size:.78rem;color:#92400e;font-weight:700">خاص بحساب الإدارة</span>
+        </div>
+        <p class="map-admin-note">أدخل عدد المراسلات الإخبارية وعدد الفيديوهات التي أنجزها كل مراسل خلال الشهر المحدد، ثم اضغط «حفظ المعطيات». هذه البيانات تُحفظ في Firestore وتظهر لجميع المستخدمين.</p>
+        <div class="map-stats-table-wrap">
+          <table class="map-stats-table">
+            <thead><tr><th>الولاية</th><th>المراسل</th><th>عدد المراسلات الإخبارية</th><th>عدد الفيديوهات</th></tr></thead>
+            <tbody id="mapStatsAdminBody"></tbody>
+          </table>
+        </div>
+        <div class="map-admin-actions">
+          <button class="btn btn-secondary" onclick="resetMapStatsForm()" style="width:auto">إفراغ الأرقام</button>
+          <button class="btn btn-primary" onclick="saveMonthlyMapStats()" style="width:auto">💾 حفظ المعطيات</button>
+        </div>
+      </div>
+      <div class="map-layout">
+        <div class="tunisia-map-card">
+          <svg id="tunisiaMapSvg" viewBox="0 0 720 880" role="img" aria-label="خريطة جغرافية لولايات الجمهورية التونسية وانتشار المراسلين">
+            <defs>
+              <linearGradient id="mapSeaGradient" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0" stop-color="#ecfeff"></stop>
+                <stop offset="1" stop-color="#dff8f4"></stop>
+              </linearGradient>
+            </defs>
+            <rect width="720" height="880" rx="22" fill="url(#mapSeaGradient)"></rect>
+            <path class="map-grid-line" d="M36 176H684M30 352H690M24 528H696M40 704H680"></path>
+            <path class="map-grid-line" d="M180 24V856M360 20V860M540 24V856"></path>
+            <g id="mapShapes"></g>
+            <g id="mapMarkers"></g>
+            <text x="360" y="865" text-anchor="middle" fill="#0f766e" opacity=".55" font-family="Cairo" font-size="15" font-weight="700">الجمهورية التونسية</text>
+          </svg>
+          <div class="map-legend"><span class="map-legend-dot"></span><span>نقطة انتشار مراسل</span><span style="margin-right:12px">•</span><span>اضغط على النقطة لعرض الاسم</span></div>
+        </div>
+        <div class="map-side-card">
+          <h3>📍 المراسلون حسب المنطقة</h3>
+          <div id="mapSelectedReporter" class="map-selected empty-selected">اختر ولاية أو منطقة من الخريطة لعرض المراسل المسؤول عنها.</div>
+          <div id="mapReportersList" class="map-list"></div>
         </div>
       </div>
     </div>
@@ -304,7 +462,7 @@ tr:hover td{background:var(--surface2)}
           <div class="card-title">📈 نتائج التقييمات</div>
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
             <input type="month" id="resultsMonth" onchange="renderResults()" style="border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-family:'Cairo',sans-serif">
-            <button id="exportPdfBtn" class="btn-pdf" onclick="exportPDF()" style="display:none">📄 تصدير PDF الشامل</button>
+            <button id="exportPdfBtn" class="btn-pdf" onclick="exportPDF()" style="display:none">📄 حفظ التقرير المفصل</button>
           </div>
         </div>
         <div id="resultsTable"></div>
@@ -382,6 +540,18 @@ tr:hover td{background:var(--surface2)}
         <div id="adminMessagesList"></div>
       </div>
 
+      <div class="card admin-evaluation-report-card">
+        <div class="card-header">
+          <div class="card-title">📑 التقرير الشهري الشامل لتقييمات المراسلين</div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <input type="month" id="adminEvaluationReportMonth" style="padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:'Cairo',sans-serif;font-weight:700;color:var(--primary)">
+            <button class="btn btn-danger" onclick="exportAdminMonthlyEvaluationsPDF()" style="width:auto;padding:8px 14px">📄 حفظ ملف التقييم المفصل</button>
+          </div>
+        </div>
+        <p style="color:var(--muted);font-size:.82rem;line-height:1.8;margin-bottom:12px">يتضمن الملف كل مراسل، وكل صحفي قام بتقييمه، والنتيجة النهائية، وعلامات المعايير والتعليلات. الملف المفصل متاح لحسابات الإدارة فقط.</p>
+        <div id="adminEvaluationReportStatus" style="font-size:.82rem;color:var(--muted)">اختر الشهر ثم اضغط «حفظ ملف التقييم المفصل» لإنشاء الملف.</div>
+      </div>
+
       <!-- ===== جميع التقييمات ===== -->
       <div class="card">
         <div class="card-header">
@@ -455,6 +625,12 @@ tr:hover td{background:var(--surface2)}
   </div>
 </div>
 
+<script>
+// Generated from geoBoundaries-TUN-ADM1.geojson; simplified for inline SVG rendering.
+window.TUNISIA_GOVERNORATE_SHAPES = [{"key":"ariana","name":"أريانة","english":"Ariana","path":"M 473.9 92.2 L 466.3 87.8 L 461.7 80.6 L 462.1 76.9 L 466.1 74.3 L 463.2 75.1 L 468.0 73.0 L 452.2 72.8 L 447.0 75.9 L 447.3 79.9 L 443.4 84.9 L 435.4 89.5 L 436.0 91.3 L 433.4 92.8 L 436.8 94.6 L 435.0 95.4 L 432.4 94.0 L 433.2 99.3 L 430.8 101.9 L 428.2 101.8 L 428.8 103.2 L 426.3 103.5 L 436.5 103.0 L 444.9 100.2 L 449.6 106.0 L 451.6 103.4 L 455.5 102.3 L 460.3 103.9 L 467.4 102.9 L 470.7 100.4 L 470.4 102.0 L 478.6 101.3 L 479.9 100.8 L 477.1 99.9 L 479.3 96.9 L 473.9 92.2 Z","cx":452.4,"cy":92.0},{"key":"kasserine","name":"القصرين","english":"Kasserine","path":"M 161.1 243.1 L 162.1 253.4 L 166.4 259.3 L 161.0 260.6 L 154.8 266.1 L 157.1 267.0 L 154.3 270.9 L 154.1 277.4 L 157.7 281.4 L 170.1 285.4 L 181.3 286.0 L 172.4 292.9 L 168.7 298.7 L 161.6 302.0 L 154.8 312.2 L 154.7 319.2 L 143.2 322.3 L 149.5 333.6 L 149.5 339.8 L 152.2 342.7 L 175.7 349.1 L 186.6 354.2 L 199.3 355.7 L 223.1 344.6 L 226.7 344.5 L 257.0 333.5 L 262.9 333.1 L 274.0 329.5 L 278.2 326.6 L 272.1 325.9 L 273.4 320.1 L 275.8 320.4 L 277.6 318.3 L 285.1 317.0 L 287.7 313.8 L 292.4 313.9 L 297.8 311.6 L 312.4 310.9 L 320.9 303.9 L 307.6 297.6 L 309.4 294.3 L 306.8 290.7 L 312.9 288.8 L 301.1 285.4 L 292.3 280.1 L 302.2 268.5 L 323.5 258.8 L 315.9 252.4 L 312.1 252.7 L 311.7 250.3 L 302.9 251.5 L 297.4 249.2 L 299.3 245.6 L 295.7 244.4 L 296.3 243.1 L 289.3 243.8 L 284.9 242.0 L 281.9 244.9 L 275.5 241.1 L 266.6 241.2 L 265.3 237.8 L 267.6 237.5 L 261.6 236.3 L 269.6 233.5 L 242.2 228.9 L 229.8 224.1 L 220.5 225.4 L 218.4 223.3 L 212.7 223.6 L 212.6 226.9 L 204.5 228.2 L 206.7 235.3 L 204.1 238.2 L 198.2 240.4 L 194.5 239.9 L 192.3 237.3 L 178.0 236.7 L 171.5 237.7 L 166.4 241.0 L 166.9 243.2 L 161.1 243.1 Z","cx":238.5,"cy":268.7},{"key":"kairouan","name":"القيروان","english":"Kairouan","path":"M 462.3 183.8 L 457.0 184.7 L 453.1 187.4 L 455.0 190.2 L 445.2 190.9 L 442.0 187.4 L 442.4 194.2 L 439.7 199.4 L 434.2 198.1 L 428.0 193.8 L 424.8 195.1 L 416.0 194.6 L 412.2 190.9 L 406.5 191.1 L 404.1 193.2 L 403.6 189.3 L 402.9 188.9 L 400.7 187.3 L 396.0 187.9 L 392.1 186.6 L 391.7 189.2 L 383.6 193.8 L 373.8 197.6 L 352.8 209.5 L 347.9 210.4 L 348.8 214.0 L 352.9 215.2 L 353.8 217.2 L 349.7 222.8 L 351.6 223.7 L 347.3 223.7 L 356.1 228.8 L 353.4 230.3 L 344.7 230.3 L 342.8 232.1 L 338.9 232.2 L 333.1 235.0 L 315.8 231.1 L 312.0 233.5 L 328.4 245.3 L 331.7 245.5 L 334.9 248.3 L 337.2 247.7 L 332.8 250.9 L 339.0 252.5 L 340.5 256.1 L 348.2 260.3 L 348.0 264.4 L 350.8 266.2 L 343.2 271.9 L 354.4 274.1 L 358.9 282.0 L 360.9 282.6 L 364.3 280.9 L 373.3 283.6 L 381.5 287.0 L 382.7 290.4 L 390.8 292.7 L 411.5 294.4 L 414.0 292.2 L 424.2 289.6 L 427.0 290.2 L 427.9 292.5 L 432.6 294.6 L 431.0 299.5 L 432.7 301.6 L 431.4 303.7 L 434.5 305.8 L 433.3 307.3 L 435.2 307.5 L 433.6 308.4 L 442.8 311.0 L 441.9 306.7 L 455.9 300.0 L 457.1 297.7 L 469.1 295.9 L 467.1 292.0 L 467.7 291.6 L 468.7 290.8 L 461.1 282.9 L 466.2 276.8 L 458.8 272.7 L 462.3 265.3 L 468.0 263.5 L 468.6 259.2 L 474.8 256.5 L 466.5 250.3 L 483.0 246.7 L 474.0 235.7 L 467.4 232.3 L 465.8 226.3 L 458.5 220.8 L 462.2 213.2 L 470.1 208.8 L 474.8 201.8 L 474.5 195.4 L 465.9 193.1 L 468.0 189.7 L 465.6 187.5 L 466.4 184.1 L 462.3 183.8 Z","cx":402.7,"cy":245.6},{"key":"el-kef","name":"الكاف","english":"El Kef","path":"M 164.8 159.7 L 166.3 161.5 L 164.9 163.3 L 167.2 164.8 L 158.5 169.4 L 161.0 170.5 L 161.2 173.0 L 153.4 179.6 L 158.6 183.8 L 159.8 188.4 L 155.7 190.0 L 151.7 194.9 L 150.6 204.8 L 146.1 206.6 L 144.9 209.9 L 147.5 210.0 L 144.5 212.5 L 147.3 213.2 L 147.4 213.3 L 146.3 230.1 L 153.5 234.6 L 161.4 237.1 L 161.1 243.1 L 166.9 243.2 L 166.4 241.0 L 171.5 237.7 L 178.0 236.7 L 192.3 237.3 L 194.5 239.9 L 198.2 240.4 L 204.1 238.2 L 206.7 235.3 L 204.5 228.2 L 209.9 227.9 L 212.6 226.9 L 212.7 223.7 L 218.2 223.3 L 220.5 225.4 L 229.8 224.1 L 235.3 225.2 L 242.2 228.9 L 261.9 233.0 L 266.6 232.7 L 275.1 235.8 L 270.5 226.5 L 273.9 224.1 L 273.9 220.3 L 270.3 217.9 L 274.5 217.5 L 276.0 216.2 L 271.8 216.3 L 272.6 214.9 L 276.7 211.2 L 280.6 211.5 L 284.0 209.6 L 283.8 205.6 L 286.7 202.1 L 295.4 198.9 L 293.5 198.1 L 295.7 196.8 L 292.8 195.6 L 294.5 192.8 L 293.6 189.8 L 285.8 185.9 L 282.6 186.4 L 273.4 182.6 L 273.4 178.5 L 276.8 176.4 L 273.3 174.8 L 274.2 172.2 L 267.5 172.2 L 260.2 165.9 L 261.4 164.9 L 258.5 164.3 L 261.0 161.2 L 265.5 159.9 L 261.2 153.6 L 255.7 150.6 L 255.1 149.3 L 257.6 147.9 L 253.7 148.5 L 251.2 151.0 L 237.1 153.9 L 229.4 154.8 L 224.7 153.5 L 220.6 154.8 L 211.2 151.8 L 203.5 153.2 L 202.7 154.5 L 192.3 154.1 L 179.1 157.7 L 176.9 160.0 L 164.8 159.7 Z","cx":226.9,"cy":192.6},{"key":"monastir","name":"المنستير","english":"Monastir","path":"M 533.4 259.3 L 537.5 256.4 L 537.8 257.4 L 537.8 258.0 L 543.1 258.1 L 545.0 259.6 L 553.6 257.8 L 552.8 259.3 L 561.1 264.7 L 565.6 265.1 L 571.2 263.5 L 572.0 258.2 L 579.6 255.6 L 584.7 255.5 L 583.3 254.3 L 586.8 251.5 L 589.7 252.3 L 595.9 251.6 L 596.4 250.1 L 602.2 250.2 L 605.4 242.2 L 569.4 233.8 L 566.9 231.3 L 568.3 231.7 L 567.9 229.0 L 571.4 225.8 L 569.9 223.6 L 554.5 226.2 L 545.3 223.7 L 542.7 225.5 L 542.4 228.9 L 535.1 229.9 L 538.2 232.0 L 535.4 235.3 L 539.0 237.7 L 534.3 240.9 L 526.1 239.3 L 518.5 245.9 L 521.2 248.2 L 514.7 249.9 L 513.6 252.7 L 514.7 258.5 L 524.3 259.3 L 523.8 257.2 L 528.5 256.1 L 532.6 256.8 L 533.4 259.3 Z M 600.5 223.2 L 604.8 222.6 L 602.7 221.6 L 600.5 223.2 Z","cx":566.0,"cy":237.2},{"key":"mahdia","name":"المهدية","english":"Mahdia","path":"M 483.0 246.7 L 466.5 250.3 L 474.8 256.5 L 468.6 259.2 L 468.0 263.5 L 462.3 265.3 L 458.8 272.7 L 466.2 276.8 L 461.1 282.9 L 468.7 290.8 L 467.7 291.6 L 467.1 292.0 L 469.1 295.9 L 478.7 298.4 L 484.6 296.9 L 492.4 298.2 L 497.3 301.8 L 502.8 303.2 L 510.8 298.3 L 519.6 297.0 L 528.8 292.9 L 529.9 292.1 L 525.0 287.3 L 536.0 284.0 L 543.5 288.0 L 549.6 288.1 L 557.3 285.8 L 556.0 285.0 L 558.4 281.6 L 562.7 282.1 L 569.9 296.8 L 578.6 295.0 L 581.9 291.8 L 587.3 295.9 L 583.9 297.7 L 589.9 302.1 L 600.7 303.1 L 603.5 297.9 L 607.1 296.7 L 605.6 296.0 L 606.8 295.2 L 611.7 295.0 L 610.7 294.0 L 615.0 291.2 L 616.6 287.9 L 624.6 287.0 L 613.7 282.9 L 603.9 276.1 L 602.4 271.2 L 605.4 268.8 L 604.3 262.7 L 607.0 257.0 L 610.7 255.5 L 605.2 254.7 L 602.0 249.9 L 596.4 250.1 L 595.5 251.7 L 586.8 251.5 L 583.3 254.3 L 584.7 255.5 L 579.6 255.6 L 572.0 258.2 L 571.2 263.5 L 565.6 265.1 L 561.1 264.7 L 552.8 259.3 L 553.6 257.8 L 545.0 259.6 L 543.1 258.1 L 537.8 258.0 L 537.8 257.4 L 537.5 256.4 L 533.3 260.3 L 526.5 262.2 L 524.8 268.2 L 521.8 266.7 L 519.8 267.8 L 513.4 266.8 L 510.9 265.0 L 512.3 263.9 L 508.3 263.8 L 507.9 259.3 L 502.1 256.7 L 494.4 257.2 L 496.5 257.1 L 493.5 259.7 L 492.0 257.2 L 482.0 253.4 L 483.0 252.5 L 480.6 250.5 L 483.2 248.2 L 485.5 248.5 L 484.2 247.3 L 486.2 248.0 L 486.8 245.6 L 483.0 246.7 Z","cx":568.3,"cy":271.8},{"key":"beja","name":"باجة","english":"Béja","path":"M 270.2 146.8 L 282.2 151.8 L 281.8 153.7 L 286.0 154.4 L 286.2 157.9 L 296.1 155.7 L 299.5 157.2 L 308.1 156.9 L 312.1 161.3 L 314.8 158.5 L 324.0 155.0 L 327.1 149.5 L 332.7 149.2 L 338.5 146.9 L 343.9 148.3 L 351.5 146.7 L 361.4 151.0 L 371.2 151.0 L 375.1 152.7 L 375.6 150.9 L 379.9 149.3 L 389.4 148.2 L 388.3 146.1 L 395.4 144.0 L 397.1 141.0 L 403.4 139.2 L 405.3 135.4 L 410.0 133.6 L 408.3 130.7 L 402.3 130.3 L 401.3 126.7 L 398.9 127.2 L 397.0 125.9 L 399.2 123.8 L 395.4 121.5 L 397.4 118.7 L 394.2 117.4 L 394.8 116.9 L 395.3 116.5 L 389.8 118.5 L 384.3 114.9 L 372.7 112.8 L 366.3 109.6 L 361.0 103.5 L 354.6 106.5 L 352.7 109.9 L 341.5 113.1 L 337.8 116.2 L 333.6 117.2 L 325.6 113.5 L 324.4 112.2 L 326.9 107.6 L 331.8 104.1 L 330.9 102.8 L 321.6 98.7 L 319.1 100.3 L 316.0 98.0 L 308.4 96.4 L 310.4 93.8 L 301.1 89.1 L 303.3 85.8 L 298.9 80.2 L 285.4 80.4 L 279.8 76.4 L 285.9 71.1 L 279.7 67.9 L 264.0 73.9 L 265.1 74.5 L 260.0 78.6 L 248.5 84.7 L 255.1 87.0 L 258.3 91.3 L 255.7 94.4 L 267.7 98.7 L 265.5 102.8 L 259.3 103.5 L 254.7 106.6 L 256.6 109.6 L 252.9 111.0 L 272.1 114.2 L 272.9 121.7 L 270.3 123.8 L 280.1 131.5 L 278.7 133.3 L 280.0 139.6 L 274.7 142.0 L 276.1 145.2 L 274.9 146.8 L 270.2 146.8 Z","cx":313.5,"cy":116.3},{"key":"ben-arous","name":"بن عروس","english":"Ben Arous","path":"M 475.2 107.5 L 476.7 111.2 L 471.7 109.9 L 466.3 110.9 L 468.7 113.2 L 463.1 117.4 L 456.1 115.8 L 453.9 116.9 L 457.3 118.5 L 452.9 120.5 L 447.7 120.2 L 439.4 128.6 L 450.1 133.4 L 456.3 131.0 L 456.3 135.0 L 459.6 138.9 L 465.1 141.2 L 477.0 142.2 L 473.5 147.1 L 478.3 148.7 L 480.2 146.6 L 489.6 144.0 L 489.7 138.7 L 494.8 137.6 L 495.0 135.1 L 492.1 133.2 L 487.1 133.8 L 493.7 129.5 L 492.5 126.1 L 496.9 126.1 L 497.9 120.2 L 501.4 118.2 L 486.7 115.5 L 477.6 108.9 L 480.5 109.8 L 479.1 108.9 L 483.0 107.9 L 475.2 107.5 Z","cx":475.6,"cy":118.0},{"key":"bizerte","name":"بنزرت","english":"Bizerte","path":"M 250.9 26.6 L 259.5 26.9 L 260.7 25.7 L 257.9 24.0 L 250.9 26.6 Z M 432.4 95.0 L 433.0 93.8 L 434.8 95.4 L 436.8 94.6 L 433.4 92.8 L 436.0 91.3 L 437.1 87.5 L 444.6 83.5 L 447.8 74.9 L 452.7 72.8 L 468.0 73.0 L 468.6 68.2 L 466.3 69.7 L 467.8 72.9 L 463.9 73.0 L 461.1 72.1 L 462.3 71.0 L 454.7 70.1 L 457.2 67.0 L 468.5 66.4 L 470.6 68.6 L 478.4 65.0 L 467.8 64.5 L 456.9 59.7 L 446.4 58.2 L 443.6 55.1 L 428.5 57.6 L 417.0 56.4 L 414.3 54.4 L 402.9 60.0 L 421.0 60.1 L 422.4 62.0 L 419.9 66.1 L 410.0 70.4 L 401.9 69.6 L 401.6 67.5 L 396.5 65.1 L 397.1 61.9 L 395.5 62.6 L 394.1 61.0 L 396.2 60.8 L 395.6 58.5 L 403.4 58.7 L 402.6 57.9 L 414.3 54.0 L 411.9 53.0 L 409.8 47.7 L 397.0 48.4 L 390.3 46.2 L 383.5 47.7 L 377.9 46.9 L 365.1 51.9 L 355.9 51.6 L 344.3 55.6 L 331.5 55.6 L 322.1 59.4 L 306.2 61.0 L 303.4 58.3 L 287.6 67.2 L 281.1 67.8 L 285.9 71.1 L 279.8 76.4 L 285.1 80.3 L 298.4 79.9 L 303.3 85.8 L 301.1 89.1 L 310.4 93.8 L 308.4 96.4 L 316.0 98.0 L 319.1 100.3 L 321.6 98.7 L 330.9 102.8 L 331.8 104.1 L 326.9 107.6 L 324.4 112.3 L 333.6 117.2 L 338.0 116.1 L 342.4 112.7 L 352.5 110.0 L 354.6 106.5 L 363.5 102.2 L 370.6 100.8 L 372.2 102.0 L 385.1 96.8 L 394.1 98.1 L 397.6 93.2 L 401.5 92.5 L 403.1 88.9 L 409.7 90.8 L 420.3 91.0 L 423.1 95.4 L 429.0 94.1 L 432.4 95.0 Z M 396.6 60.8 L 399.2 60.9 L 401.0 59.1 L 399.3 58.7 L 396.6 60.8 Z","cx":370.2,"cy":62.0},{"key":"tataouine","name":"تطاوين","english":"Tataouine","path":"M 161.6 597.4 L 278.3 644.7 L 298.4 691.5 L 359.6 856.0 L 404.6 843.8 L 412.2 843.9 L 423.1 838.6 L 433.5 828.7 L 443.8 824.4 L 468.4 802.1 L 477.2 791.1 L 482.7 780.4 L 481.3 778.9 L 479.3 773.5 L 478.5 770.0 L 477.7 763.8 L 480.8 758.0 L 476.1 754.6 L 474.7 749.2 L 475.5 747.1 L 472.8 745.9 L 465.9 736.1 L 454.4 713.9 L 467.3 704.0 L 476.4 694.8 L 477.9 691.9 L 483.7 688.4 L 496.0 684.2 L 509.7 685.1 L 514.6 682.6 L 519.2 684.1 L 537.0 668.4 L 533.4 665.0 L 535.2 664.2 L 533.3 664.1 L 536.2 661.5 L 537.5 662.2 L 536.6 659.5 L 539.0 657.6 L 551.4 658.3 L 563.4 654.8 L 574.2 644.9 L 574.3 642.6 L 601.9 631.9 L 622.7 626.2 L 627.0 619.8 L 639.4 617.1 L 652.4 612.2 L 653.5 610.5 L 653.5 610.5 L 650.8 609.3 L 634.3 611.8 L 620.9 594.0 L 611.1 577.8 L 618.0 573.0 L 615.2 561.9 L 616.1 556.1 L 603.7 541.3 L 603.4 538.3 L 600.7 536.9 L 603.1 530.0 L 598.1 531.9 L 580.3 530.2 L 576.1 531.4 L 524.5 528.1 L 518.6 523.9 L 525.7 522.7 L 533.5 517.7 L 513.2 516.4 L 513.2 514.1 L 492.7 521.7 L 485.6 521.9 L 473.8 525.0 L 458.8 531.6 L 448.8 531.7 L 446.0 534.1 L 425.8 533.3 L 422.8 535.6 L 415.3 533.4 L 414.8 534.9 L 418.7 535.5 L 421.9 540.4 L 431.5 541.6 L 433.0 542.1 L 434.3 543.4 L 421.9 546.3 L 423.0 553.5 L 427.6 557.3 L 423.0 561.9 L 417.9 562.4 L 419.7 567.7 L 412.6 571.0 L 426.3 576.7 L 426.4 579.5 L 425.5 580.5 L 424.2 580.9 L 421.6 580.9 L 418.2 579.7 L 416.0 576.9 L 406.3 574.6 L 404.0 571.9 L 400.6 572.5 L 394.2 565.1 L 384.5 563.5 L 365.9 568.7 L 359.8 568.7 L 353.5 571.7 L 345.3 574.2 L 310.3 579.6 L 302.4 580.8 L 161.6 597.4 Z","cx":521.5,"cy":590.1},{"key":"tozeur","name":"توزر","english":"Tozeur","path":"M 209.5 420.1 L 180.5 419.4 L 160.3 421.0 L 157.8 417.6 L 159.4 414.8 L 156.8 413.1 L 156.9 409.2 L 150.6 410.0 L 128.2 404.0 L 122.9 397.3 L 109.6 389.7 L 118.5 381.7 L 115.6 379.6 L 125.0 366.5 L 121.8 368.8 L 116.5 368.4 L 114.6 370.5 L 109.9 370.9 L 104.6 374.9 L 95.1 376.1 L 91.7 379.3 L 79.1 380.9 L 78.6 386.6 L 72.0 399.4 L 72.4 402.2 L 72.5 402.8 L 58.7 407.7 L 49.8 405.4 L 46.0 404.6 L 40.0 411.1 L 39.2 414.1 L 33.5 415.8 L 35.3 416.2 L 33.7 417.2 L 25.7 419.1 L 30.3 425.4 L 24.0 437.9 L 26.4 441.9 L 28.2 445.6 L 24.6 450.0 L 30.6 452.4 L 31.1 458.1 L 42.4 475.7 L 59.4 492.5 L 77.6 488.9 L 139.8 459.2 L 160.9 452.1 L 176.5 442.9 L 192.9 435.7 L 206.6 425.3 L 209.5 420.1 Z","cx":149.6,"cy":409.7},{"key":"tunis","name":"تونس العاصمة","english":"Tunis","path":"M 451.3 105.3 L 451.3 108.9 L 444.5 108.5 L 440.8 110.0 L 435.8 108.6 L 433.0 109.9 L 436.6 111.5 L 439.1 114.7 L 437.7 115.3 L 444.7 117.1 L 443.9 119.1 L 447.2 120.5 L 454.7 119.9 L 457.3 118.5 L 453.9 116.9 L 456.1 115.8 L 463.1 117.4 L 468.7 113.2 L 466.3 110.9 L 469.3 108.1 L 483.5 107.7 L 483.2 105.5 L 490.8 100.5 L 485.4 97.9 L 484.6 95.1 L 473.9 92.2 L 479.3 96.9 L 477.1 99.9 L 479.9 100.8 L 470.4 102.0 L 470.7 100.4 L 467.4 102.9 L 460.3 103.9 L 455.5 102.3 L 451.6 103.4 L 451.3 105.3 Z","cx":475.0,"cy":103.4},{"key":"jendouba","name":"جندوبة","english":"Jendouba","path":"M 257.6 147.9 L 274.9 146.8 L 276.1 145.2 L 274.7 142.0 L 280.0 139.6 L 278.7 133.3 L 280.1 131.5 L 270.3 123.8 L 272.9 121.7 L 272.1 114.2 L 252.9 111.0 L 256.6 109.6 L 254.7 106.6 L 259.3 103.5 L 265.5 102.8 L 267.7 98.7 L 255.7 94.4 L 258.3 91.3 L 255.1 87.0 L 248.5 84.7 L 231.8 91.0 L 228.6 91.0 L 228.0 89.4 L 227.4 90.5 L 225.1 89.2 L 220.0 89.4 L 208.6 92.4 L 210.5 95.3 L 206.7 97.4 L 205.8 102.3 L 215.0 104.0 L 213.1 106.5 L 203.5 109.5 L 201.6 108.6 L 197.1 111.5 L 182.6 110.8 L 173.6 113.1 L 173.5 114.3 L 179.2 114.3 L 179.5 117.0 L 183.1 120.1 L 180.3 123.5 L 177.1 124.2 L 178.6 124.6 L 176.8 129.2 L 171.6 128.7 L 166.7 131.8 L 156.5 134.2 L 150.8 138.1 L 145.0 138.4 L 135.0 141.8 L 132.0 141.1 L 128.1 143.0 L 130.7 146.8 L 137.9 148.7 L 149.7 148.7 L 156.8 150.3 L 161.3 148.7 L 164.0 150.7 L 169.7 151.3 L 167.7 154.7 L 169.0 156.5 L 164.8 159.7 L 168.0 159.9 L 176.9 160.0 L 179.1 157.7 L 192.3 154.1 L 202.7 154.5 L 203.5 153.2 L 211.2 151.8 L 220.6 154.8 L 224.7 153.5 L 229.4 154.8 L 237.1 153.9 L 251.2 151.0 L 253.7 148.5 L 257.6 147.9 Z","cx":201.8,"cy":122.7},{"key":"zaghouan","name":"زغوان","english":"Zaghouan","path":"M 439.4 128.6 L 435.2 124.1 L 416.3 136.6 L 412.9 134.1 L 405.8 135.0 L 403.4 139.2 L 398.9 139.9 L 395.4 144.0 L 388.3 146.1 L 393.0 152.8 L 391.3 153.1 L 391.9 158.9 L 385.7 161.5 L 385.5 161.8 L 386.9 163.7 L 378.2 166.5 L 372.5 166.6 L 365.5 170.2 L 375.5 174.9 L 378.2 174.8 L 378.5 173.4 L 386.2 176.9 L 387.0 180.9 L 394.4 183.1 L 392.1 186.6 L 396.0 187.9 L 400.7 187.3 L 402.9 188.9 L 403.6 189.3 L 404.1 193.2 L 406.5 191.1 L 412.2 190.9 L 416.0 194.6 L 424.8 195.1 L 428.0 193.8 L 434.2 198.1 L 439.7 199.4 L 442.4 194.2 L 442.0 187.4 L 445.2 190.9 L 455.0 190.2 L 453.1 187.4 L 457.0 184.7 L 462.3 183.8 L 462.5 181.6 L 475.9 180.6 L 474.4 177.0 L 476.2 175.2 L 474.2 173.9 L 478.4 172.8 L 478.4 174.7 L 484.4 175.3 L 489.1 172.6 L 494.6 172.7 L 496.5 169.4 L 491.2 167.4 L 493.8 167.6 L 496.8 165.0 L 492.9 160.9 L 494.2 158.6 L 489.1 151.3 L 489.6 144.0 L 480.2 146.6 L 478.4 148.7 L 474.1 148.2 L 477.0 142.2 L 465.1 141.2 L 459.6 138.9 L 456.3 135.0 L 456.0 130.9 L 450.1 133.4 L 439.4 128.6 Z","cx":437.9,"cy":166.5},{"key":"siliana","name":"سليانة","english":"Siliana","path":"M 269.6 233.5 L 261.6 236.3 L 267.6 237.5 L 265.3 237.8 L 266.6 241.2 L 275.5 241.1 L 281.9 244.9 L 284.9 242.0 L 289.3 243.8 L 296.3 243.1 L 295.7 244.4 L 299.3 245.6 L 297.4 249.2 L 302.9 251.5 L 311.7 250.3 L 312.1 252.7 L 315.9 252.4 L 320.7 255.1 L 322.5 258.9 L 332.7 256.9 L 341.0 258.1 L 344.0 257.2 L 340.5 256.1 L 339.0 252.5 L 332.8 250.9 L 337.2 247.7 L 334.9 248.3 L 331.7 245.5 L 328.4 245.3 L 312.0 233.3 L 315.8 231.1 L 333.1 235.0 L 338.9 232.2 L 342.8 232.1 L 344.7 230.3 L 353.4 230.3 L 356.1 228.8 L 347.3 223.7 L 351.6 223.7 L 349.7 222.8 L 353.8 217.2 L 352.9 215.2 L 348.8 214.0 L 347.9 210.4 L 362.4 205.0 L 373.8 197.6 L 391.7 189.2 L 394.4 183.1 L 387.0 180.9 L 386.2 176.9 L 382.6 175.1 L 378.5 173.4 L 378.2 174.8 L 375.5 174.9 L 365.5 170.2 L 372.5 166.6 L 378.2 166.5 L 386.9 163.7 L 385.5 161.8 L 385.7 161.5 L 392.1 158.3 L 391.3 153.1 L 393.0 152.5 L 390.8 148.3 L 379.9 149.3 L 375.6 150.9 L 375.1 152.7 L 371.2 151.0 L 361.4 151.0 L 351.5 146.7 L 343.9 148.3 L 338.5 146.9 L 332.7 149.2 L 327.1 149.5 L 324.0 155.0 L 314.8 158.5 L 312.1 161.3 L 308.1 156.9 L 299.5 157.2 L 296.1 155.7 L 286.2 157.9 L 286.0 154.4 L 281.8 153.7 L 282.2 151.8 L 270.2 146.8 L 256.0 148.3 L 256.4 151.6 L 261.2 153.6 L 265.5 159.9 L 261.0 161.2 L 258.5 164.3 L 261.4 164.9 L 260.2 165.9 L 267.5 172.2 L 274.2 172.2 L 273.3 174.8 L 276.8 176.4 L 273.4 178.5 L 273.4 182.6 L 282.6 186.4 L 285.8 185.9 L 293.6 189.8 L 294.5 192.8 L 292.8 195.6 L 295.7 196.8 L 293.5 198.1 L 295.4 198.9 L 286.7 202.1 L 283.8 205.6 L 284.0 209.6 L 280.6 211.5 L 276.7 211.2 L 272.6 214.9 L 271.8 216.3 L 276.0 216.2 L 274.5 217.5 L 270.3 217.9 L 273.9 220.3 L 273.9 224.1 L 270.5 226.5 L 275.1 235.8 L 269.6 233.5 Z","cx":304.5,"cy":197.4},{"key":"sousse","name":"سوسة","english":"Sousse","path":"M 462.3 183.8 L 466.4 184.1 L 465.6 187.5 L 468.0 189.7 L 465.9 193.1 L 474.5 195.4 L 474.8 201.8 L 470.1 208.8 L 462.2 213.2 L 458.5 220.8 L 465.8 226.3 L 467.4 232.3 L 474.0 235.7 L 483.0 246.7 L 486.8 245.6 L 486.2 248.0 L 484.2 247.3 L 485.5 248.5 L 483.2 248.2 L 480.6 250.5 L 483.0 252.5 L 482.0 253.4 L 492.0 257.2 L 493.5 259.7 L 496.5 257.1 L 494.4 257.2 L 502.1 256.7 L 507.9 259.3 L 508.3 263.8 L 512.3 263.9 L 510.9 265.0 L 513.4 266.8 L 525.7 268.0 L 526.5 262.2 L 533.3 260.3 L 533.0 257.1 L 524.7 256.7 L 523.1 257.8 L 524.6 259.1 L 521.2 259.8 L 519.3 258.1 L 514.7 258.5 L 514.7 249.9 L 521.2 248.2 L 518.5 245.9 L 526.1 239.3 L 534.3 240.9 L 539.0 237.7 L 535.4 235.3 L 538.2 232.0 L 535.1 229.9 L 542.4 228.9 L 542.7 225.5 L 545.5 223.6 L 539.1 220.7 L 538.2 219.1 L 539.9 219.2 L 535.1 216.6 L 520.1 202.2 L 514.8 202.8 L 515.4 201.2 L 510.3 201.3 L 515.2 200.5 L 507.3 198.8 L 517.1 198.8 L 520.0 202.2 L 517.5 196.2 L 512.1 193.3 L 509.2 183.1 L 511.0 173.0 L 520.0 157.3 L 515.8 154.9 L 510.6 159.3 L 502.5 156.6 L 492.9 155.9 L 492.9 160.9 L 496.8 165.0 L 493.8 167.6 L 491.2 167.4 L 496.5 169.4 L 494.6 172.7 L 489.1 172.6 L 484.4 175.3 L 478.4 174.7 L 478.4 172.8 L 474.6 173.7 L 475.9 180.6 L 462.7 181.5 L 462.3 183.8 Z","cx":504.6,"cy":213.9},{"key":"sidi-bouzid","name":"سيدي بوزيد","english":"Sidi Bouzid","path":"M 442.8 311.0 L 433.6 308.4 L 435.2 307.5 L 433.3 307.3 L 434.5 305.8 L 431.4 303.7 L 432.7 301.6 L 431.0 299.5 L 432.6 294.6 L 427.9 292.5 L 427.0 290.2 L 424.2 289.6 L 414.0 292.2 L 411.5 294.4 L 390.8 292.7 L 382.7 290.4 L 381.5 287.0 L 373.3 283.6 L 364.3 280.9 L 360.9 282.6 L 358.9 282.0 L 354.4 274.1 L 343.2 271.9 L 345.7 269.1 L 350.8 267.2 L 348.0 264.4 L 348.4 260.5 L 344.4 259.0 L 344.0 257.2 L 341.0 258.1 L 332.4 256.9 L 322.2 259.1 L 305.8 266.3 L 292.3 279.7 L 301.1 285.4 L 312.9 288.8 L 306.8 290.7 L 309.4 294.3 L 307.6 297.6 L 320.9 303.9 L 312.4 310.9 L 297.8 311.6 L 292.4 313.9 L 287.7 313.8 L 285.1 317.0 L 277.6 318.3 L 275.8 320.4 L 273.4 320.1 L 272.1 325.9 L 277.2 325.8 L 277.3 328.0 L 254.5 334.9 L 263.9 343.9 L 278.7 349.7 L 282.4 346.8 L 293.3 345.5 L 292.7 346.7 L 299.0 348.2 L 299.9 346.7 L 305.1 346.5 L 310.9 349.2 L 314.0 351.9 L 309.5 361.2 L 312.1 362.4 L 315.9 361.0 L 319.3 364.2 L 325.3 363.0 L 323.3 366.8 L 318.7 370.0 L 322.8 370.8 L 326.5 369.4 L 334.3 370.2 L 336.4 372.1 L 342.2 372.3 L 348.1 376.3 L 351.2 383.6 L 360.0 385.0 L 356.3 387.0 L 358.0 396.9 L 382.2 394.9 L 393.0 395.8 L 386.7 388.7 L 399.6 385.5 L 409.1 384.9 L 419.3 377.9 L 419.9 373.8 L 423.7 375.9 L 442.2 367.2 L 427.3 365.8 L 429.3 364.8 L 427.5 362.5 L 417.2 359.2 L 413.0 359.6 L 411.4 358.0 L 416.0 355.1 L 412.5 353.8 L 413.8 351.8 L 417.3 351.4 L 415.8 349.7 L 418.9 345.1 L 418.0 341.6 L 422.3 341.0 L 424.9 332.5 L 433.8 325.0 L 442.8 311.0 Z","cx":352.9,"cy":312.7},{"key":"sfax","name":"صفاقس","english":"Sfax","path":"M 482.3 384.9 L 485.3 386.1 L 483.9 383.7 L 482.3 384.9 Z M 384.7 395.0 L 390.5 400.6 L 392.0 402.0 L 402.5 402.0 L 403.5 400.0 L 408.0 401.1 L 415.2 407.9 L 419.5 406.8 L 421.5 403.6 L 426.7 403.0 L 438.0 406.4 L 437.9 407.9 L 439.4 403.6 L 437.2 403.5 L 439.6 401.2 L 440.1 403.6 L 452.4 391.0 L 460.4 390.0 L 463.9 385.6 L 467.0 387.5 L 472.0 385.0 L 476.9 384.8 L 479.5 379.4 L 480.6 380.8 L 487.1 381.9 L 485.8 382.3 L 490.1 381.2 L 490.5 379.4 L 485.4 380.6 L 490.3 378.4 L 494.2 379.1 L 503.3 371.3 L 508.2 369.3 L 525.2 366.9 L 521.6 368.1 L 530.1 365.7 L 532.2 363.9 L 530.9 364.9 L 532.0 360.3 L 539.5 354.8 L 547.7 354.9 L 552.8 352.8 L 556.6 347.5 L 556.5 344.7 L 558.5 346.1 L 557.8 345.0 L 560.3 345.0 L 558.3 344.2 L 561.1 344.9 L 561.3 342.0 L 565.5 339.5 L 575.9 336.1 L 575.1 332.9 L 582.0 328.0 L 583.9 328.6 L 582.2 327.9 L 584.7 324.5 L 584.8 317.0 L 598.2 311.6 L 600.3 308.5 L 602.9 308.5 L 601.0 308.2 L 601.7 304.2 L 589.9 302.1 L 583.9 297.7 L 587.3 295.9 L 581.9 291.8 L 578.6 295.0 L 569.9 296.8 L 562.7 282.1 L 558.4 281.6 L 556.0 285.0 L 557.3 285.8 L 549.6 288.1 L 543.5 288.0 L 536.0 284.0 L 525.0 287.3 L 529.9 292.1 L 528.8 292.9 L 519.6 297.0 L 510.8 298.3 L 502.8 303.2 L 497.3 301.8 L 492.4 298.2 L 485.2 297.0 L 478.7 298.4 L 470.1 295.8 L 457.1 297.7 L 455.9 300.0 L 441.9 306.7 L 442.8 312.9 L 433.8 325.0 L 424.9 332.5 L 422.3 341.0 L 418.0 341.6 L 418.9 345.1 L 415.8 349.7 L 417.3 351.4 L 413.8 351.8 L 412.5 353.8 L 416.0 355.1 L 411.4 358.0 L 413.0 359.6 L 417.2 359.2 L 427.5 362.5 L 429.3 364.8 L 427.3 365.8 L 442.2 367.2 L 423.7 375.9 L 419.9 373.8 L 419.3 377.9 L 409.1 384.9 L 399.6 385.5 L 386.7 388.7 L 393.0 395.8 L 384.7 395.0 Z M 647.5 341.9 L 653.7 340.9 L 647.5 341.9 Z M 647.2 333.1 L 652.4 334.3 L 647.2 333.1 Z M 591.6 352.3 L 605.0 357.3 L 617.7 351.6 L 595.9 350.5 L 591.6 352.3 Z M 617.2 349.8 L 618.7 351.6 L 630.6 347.1 L 638.0 346.2 L 638.4 344.7 L 644.7 343.7 L 646.1 344.7 L 647.3 342.6 L 641.9 338.5 L 645.8 338.5 L 644.3 335.5 L 649.5 335.9 L 642.4 333.9 L 643.1 335.7 L 637.8 332.5 L 638.0 337.0 L 632.7 337.8 L 635.4 339.9 L 634.3 342.2 L 629.8 342.7 L 625.2 340.3 L 627.1 342.6 L 625.9 344.2 L 617.2 349.8 Z","cx":590.9,"cy":343.8},{"key":"gabes","name":"قابس","english":"Gabès","path":"M 384.7 395.0 L 358.0 396.9 L 356.4 400.3 L 341.5 403.0 L 329.8 401.0 L 320.0 402.0 L 309.7 405.0 L 308.3 406.0 L 313.0 411.0 L 325.4 414.2 L 315.7 417.1 L 310.8 420.3 L 308.4 435.1 L 322.6 452.9 L 323.5 457.1 L 325.4 460.0 L 340.6 463.0 L 344.0 469.8 L 356.4 468.6 L 355.6 470.7 L 356.0 472.0 L 356.7 472.4 L 359.2 473.8 L 369.2 473.6 L 364.9 474.4 L 359.8 477.8 L 355.1 484.2 L 348.0 484.5 L 370.1 493.1 L 374.4 501.0 L 384.0 508.2 L 398.0 510.1 L 420.7 506.8 L 432.5 507.5 L 449.9 501.5 L 447.7 499.7 L 448.4 499.0 L 448.7 498.5 L 456.2 496.7 L 454.4 495.9 L 458.3 494.3 L 478.0 492.0 L 481.3 487.4 L 487.2 485.1 L 493.6 475.4 L 501.3 471.9 L 500.9 469.0 L 511.5 467.0 L 498.3 464.5 L 491.6 461.8 L 492.3 460.9 L 490.4 461.4 L 478.7 456.6 L 476.4 453.4 L 462.3 447.0 L 450.8 439.2 L 452.2 439.0 L 449.6 437.2 L 450.4 435.9 L 448.0 435.7 L 451.0 435.6 L 446.5 434.9 L 438.5 423.0 L 435.1 405.3 L 432.5 405.6 L 426.7 403.0 L 421.5 403.6 L 419.5 406.8 L 415.4 407.9 L 409.9 404.5 L 408.0 401.1 L 403.5 400.0 L 402.5 402.0 L 392.0 402.0 L 390.5 400.6 L 384.7 395.0 Z","cx":432.6,"cy":449.9},{"key":"kebili","name":"قبلي","english":"Kébili","path":"M 59.4 492.5 L 58.7 498.2 L 61.4 503.6 L 66.1 504.0 L 75.1 519.4 L 87.2 519.8 L 122.1 529.5 L 121.9 535.2 L 143.5 549.4 L 155.9 560.9 L 161.1 594.5 L 161.6 597.4 L 302.4 580.8 L 310.3 579.6 L 345.3 574.2 L 353.5 571.7 L 359.8 568.7 L 365.9 568.7 L 384.5 563.5 L 394.5 565.3 L 400.6 572.5 L 404.0 571.9 L 406.3 574.6 L 416.0 576.9 L 418.2 579.7 L 421.6 580.9 L 424.2 580.9 L 425.5 580.5 L 426.4 579.5 L 426.3 576.7 L 412.6 571.0 L 419.7 567.7 L 417.9 562.4 L 423.0 561.9 L 427.6 557.3 L 423.0 553.5 L 421.9 546.3 L 434.3 543.4 L 433.0 542.1 L 431.5 541.6 L 421.9 540.4 L 418.7 535.5 L 414.8 534.9 L 418.4 532.6 L 418.6 518.3 L 415.8 516.7 L 408.9 517.7 L 403.7 517.0 L 397.8 515.8 L 374.4 501.0 L 370.1 493.1 L 348.0 484.5 L 355.1 484.2 L 359.8 477.8 L 364.9 474.4 L 369.2 473.6 L 359.2 473.8 L 356.7 472.4 L 356.0 472.0 L 355.6 470.7 L 356.4 468.6 L 344.0 469.8 L 340.6 463.0 L 325.4 460.0 L 323.5 457.1 L 322.6 452.9 L 308.4 435.1 L 310.8 420.3 L 315.7 417.1 L 325.4 414.2 L 313.0 411.0 L 308.3 406.0 L 304.4 407.5 L 288.7 408.3 L 270.3 413.2 L 243.7 413.3 L 241.9 416.2 L 222.3 416.2 L 211.3 417.8 L 206.6 425.3 L 192.9 435.7 L 176.5 442.9 L 160.9 452.1 L 139.8 459.2 L 77.6 488.9 L 59.4 492.5 Z","cx":289.5,"cy":480.5},{"key":"gafsa","name":"قفصة","english":"Gafsa","path":"M 156.2 343.7 L 151.5 343.8 L 146.4 348.3 L 142.4 348.8 L 142.6 350.9 L 148.9 352.7 L 142.5 355.2 L 144.0 357.1 L 137.5 358.4 L 136.4 360.0 L 139.4 361.3 L 129.3 362.3 L 130.2 364.2 L 125.0 366.9 L 115.6 379.6 L 118.5 381.7 L 109.6 389.7 L 122.9 397.3 L 128.3 404.1 L 150.6 410.0 L 156.9 409.2 L 156.8 413.1 L 159.4 414.8 L 157.8 417.6 L 160.3 421.0 L 180.5 419.4 L 209.2 420.2 L 210.5 418.1 L 214.8 416.9 L 241.9 416.2 L 243.7 413.3 L 271.5 413.0 L 288.7 408.3 L 304.4 407.5 L 320.0 402.0 L 329.8 401.0 L 339.7 403.1 L 357.3 399.8 L 358.3 391.2 L 356.3 387.0 L 360.0 385.0 L 351.2 383.6 L 348.1 376.3 L 342.2 372.3 L 336.4 372.1 L 334.3 370.2 L 326.5 369.4 L 322.8 370.8 L 318.7 370.0 L 323.3 366.8 L 325.3 363.0 L 319.3 364.2 L 315.9 361.0 L 312.1 362.4 L 309.5 361.2 L 314.0 351.9 L 305.1 346.5 L 299.9 346.7 L 299.0 348.2 L 292.7 346.7 L 293.3 345.5 L 284.0 346.4 L 278.7 349.7 L 263.9 343.9 L 254.5 334.9 L 232.8 341.3 L 226.5 344.6 L 223.1 344.6 L 199.3 355.7 L 186.6 354.2 L 175.7 349.1 L 156.2 343.7 Z","cx":233.3,"cy":388.8},{"key":"medenine","name":"مدنين","english":"Médenine","path":"M 574.1 472.7 L 575.8 474.4 L 576.3 472.4 L 574.1 472.7 Z M 548.9 457.5 L 551.3 458.7 L 551.0 456.4 L 548.9 457.5 Z M 417.0 533.3 L 422.8 535.6 L 425.8 533.3 L 446.0 534.1 L 448.8 531.7 L 458.8 531.6 L 473.8 525.0 L 485.6 521.9 L 492.7 521.7 L 513.2 514.1 L 513.2 516.4 L 533.5 517.7 L 525.7 522.7 L 518.6 523.9 L 524.5 528.1 L 576.1 531.4 L 580.3 530.2 L 598.1 531.9 L 603.1 530.0 L 600.7 536.9 L 603.4 538.3 L 603.7 541.3 L 616.1 556.1 L 615.2 561.9 L 618.0 573.0 L 611.1 577.8 L 620.9 594.0 L 634.3 611.8 L 650.8 609.3 L 653.5 610.5 L 653.5 610.5 L 652.4 612.2 L 639.4 617.1 L 627.0 619.8 L 622.7 626.2 L 687.6 608.1 L 691.5 604.8 L 695.2 602.9 L 696.0 595.6 L 688.0 588.5 L 680.3 585.6 L 675.9 580.0 L 678.6 575.5 L 678.8 550.2 L 684.1 542.4 L 684.0 531.9 L 689.5 524.9 L 689.7 521.9 L 676.7 520.1 L 651.0 510.5 L 670.0 518.6 L 670.5 520.5 L 626.0 517.2 L 623.4 512.1 L 616.3 508.3 L 618.4 505.0 L 626.0 504.9 L 645.6 509.2 L 626.0 503.4 L 619.4 498.7 L 612.9 499.9 L 617.3 498.3 L 616.5 496.5 L 618.6 497.7 L 619.9 496.8 L 615.6 494.5 L 615.3 495.6 L 612.4 491.3 L 614.6 486.7 L 617.0 486.0 L 615.6 485.0 L 616.9 484.5 L 618.8 486.3 L 616.1 479.6 L 608.2 471.7 L 596.7 466.9 L 598.0 468.2 L 595.3 468.2 L 596.3 469.5 L 592.7 470.0 L 588.2 469.4 L 585.1 466.3 L 588.2 469.6 L 582.5 471.3 L 588.6 476.1 L 587.2 478.6 L 584.8 480.7 L 565.2 484.5 L 561.4 487.1 L 547.6 484.9 L 548.1 481.7 L 544.5 480.1 L 545.7 477.4 L 551.1 475.4 L 553.5 472.2 L 552.8 467.3 L 555.1 463.8 L 551.6 460.4 L 526.5 466.4 L 526.1 468.2 L 530.3 467.9 L 529.1 469.1 L 523.7 469.2 L 526.0 466.2 L 513.8 468.3 L 513.6 470.2 L 509.8 468.8 L 505.4 470.0 L 502.2 468.5 L 501.3 471.9 L 493.6 475.4 L 487.2 485.1 L 481.3 487.4 L 478.1 492.0 L 458.3 494.3 L 454.4 495.9 L 456.2 496.7 L 448.7 498.5 L 448.4 499.0 L 447.7 499.7 L 449.9 501.5 L 444.7 503.7 L 436.4 505.2 L 432.5 507.5 L 420.7 506.8 L 398.0 510.1 L 384.5 508.5 L 397.8 515.8 L 403.7 517.0 L 408.9 517.7 L 417.5 517.4 L 419.0 524.1 L 417.0 533.3 Z M 552.2 454.0 L 554.5 459.4 L 557.8 461.3 L 562.5 461.6 L 562.7 458.7 L 569.4 457.2 L 576.9 462.3 L 575.5 466.4 L 578.5 469.0 L 580.2 464.1 L 583.1 463.5 L 585.0 466.2 L 583.3 463.7 L 591.7 458.1 L 592.8 463.1 L 596.7 455.3 L 607.4 451.0 L 606.4 447.0 L 599.3 445.9 L 579.4 436.7 L 585.9 438.9 L 586.4 440.9 L 576.6 441.0 L 563.1 438.1 L 555.0 439.8 L 555.8 450.0 L 552.2 454.0 Z","cx":583.3,"cy":479.3},{"key":"manouba","name":"منوبة","english":"Manouba","path":"M 451.3 105.3 L 448.2 104.9 L 444.5 100.2 L 436.5 103.0 L 430.6 102.5 L 429.2 104.1 L 426.8 103.8 L 433.2 99.3 L 434.2 97.4 L 432.4 95.0 L 429.0 94.1 L 423.1 95.4 L 420.3 91.0 L 409.7 90.8 L 403.6 88.9 L 394.1 98.1 L 384.9 96.9 L 372.2 102.0 L 369.0 100.9 L 360.9 103.8 L 366.3 109.6 L 372.7 112.8 L 384.3 114.9 L 389.8 118.5 L 395.3 116.5 L 394.8 116.9 L 394.2 117.4 L 397.4 118.7 L 395.4 121.5 L 399.2 123.8 L 397.0 125.9 L 398.9 127.2 L 401.2 126.6 L 402.3 130.3 L 407.5 130.3 L 409.9 134.1 L 414.0 134.3 L 414.7 135.0 L 416.3 136.6 L 435.2 124.1 L 439.4 128.6 L 445.8 123.6 L 447.7 120.2 L 443.9 119.1 L 444.7 117.1 L 437.7 115.3 L 439.1 114.7 L 436.6 111.5 L 433.0 109.9 L 435.8 108.6 L 440.8 110.0 L 444.5 108.5 L 451.3 108.9 L 451.3 105.3 Z","cx":418.0,"cy":109.1},{"key":"nabeul","name":"نابل","english":"Nabeul","path":"M 489.6 144.0 L 489.1 151.3 L 492.9 155.9 L 502.5 156.6 L 510.6 159.3 L 515.8 154.9 L 520.0 157.3 L 519.6 159.3 L 527.2 154.2 L 531.2 153.6 L 534.0 154.9 L 546.8 150.5 L 565.6 147.5 L 576.4 133.3 L 592.5 116.9 L 602.5 108.9 L 613.2 104.4 L 616.3 104.7 L 618.5 102.2 L 619.7 99.9 L 614.8 96.7 L 613.4 90.7 L 606.9 84.6 L 606.8 82.1 L 609.5 79.9 L 606.7 77.4 L 602.9 75.6 L 603.4 76.7 L 593.0 80.0 L 582.0 80.0 L 582.6 84.9 L 580.5 84.5 L 576.4 88.3 L 557.4 96.5 L 546.7 99.5 L 532.7 99.1 L 533.3 100.0 L 528.9 101.2 L 520.8 113.3 L 501.2 117.9 L 497.9 120.2 L 496.9 126.1 L 492.5 126.1 L 493.7 129.5 L 487.1 133.8 L 492.1 133.2 L 495.0 135.1 L 494.8 137.6 L 489.7 138.7 L 489.6 144.0 Z M 562.4 71.4 L 563.3 72.5 L 567.5 72.0 L 565.2 69.4 L 562.4 71.4 Z","cx":572.5,"cy":104.5}];
+window.TUNISIA_MAP_VIEWBOX = {width:720,height:880};
+
+</script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, updatePassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -487,6 +663,30 @@ const CRITERIA = [
   {id:"engage", name:"التفاعل والتواصل",   weight:15},
   {id:"init",   name:"المبادرة والإبداع",  weight:10},
 ];
+
+// ========== خريطة انتشار المراسلين ==========
+// shapeKey يطابق مفتاح الولاية في طبقة الحدود الجغرافية الفعلية.
+const MAP_REPORTERS = [
+  {id:"tunis", governorate:"تونس العاصمة", reporter:"مفيدة الشرقي", shapeKey:"tunis"},
+  {id:"nabeul", governorate:"نابل", reporter:"ليلى بن سعد", shapeKey:"nabeul"},
+  {id:"bizerte", governorate:"بنزرت", reporter:"بدر الدين عرعار", shapeKey:"bizerte"},
+  {id:"beja", governorate:"باجة", reporter:"محمد عزيز التوجاني", shapeKey:"beja"},
+  {id:"jendouba", governorate:"جندوبة", reporter:"روضة مديوني", shapeKey:"jendouba"},
+  {id:"zaghouan", governorate:"زغوان", reporter:"محمد علي جرادة", shapeKey:"zaghouan"},
+  {id:"kasserine", governorate:"القصرين", reporter:"هادي نصرللي", shapeKey:"kasserine"},
+  {id:"kebili", governorate:"قبلي", reporter:"هادي بوصفة", shapeKey:"kebili"},
+  {id:"medenine", governorate:"مدنين", reporter:"نعيمة خليصة", shapeKey:"medenine"},
+  {id:"gabes", governorate:"قابس", reporter:"بولبابة التلمودي", shapeKey:"gabes"},
+  {id:"gafsa", governorate:"قفصة", reporter:"رؤوف العياري", shapeKey:"gafsa"},
+  {id:"kairouan", governorate:"القيروان", reporter:"حمزة الخلفاوي", shapeKey:"kairouan"},
+  {id:"monastir", governorate:"المنستير", reporter:"ماهر جعيدان", shapeKey:"monastir"},
+  {id:"sidi-bouzid", governorate:"سيدي بوزيد", reporter:"فوزي الصالحي", shapeKey:"sidi-bouzid"},
+  {id:"jebeniana", governorate:"جبنيانة", parentGovernorate:"صفاقس", reporter:"وحيد الداهش", shapeKey:"sfax", markerX:610, markerY:322}
+];
+let mapDirectory = MAP_REPORTERS.map(item=>({...item}));
+let selectedMapReporterId = null;
+let mapMonthlyStats = {};
+let mapStatsLoadedMonth = "";
 
 // ========== INIT ==========
 const app = initializeApp(firebaseConfig);
@@ -522,10 +722,70 @@ onAuthStateChanged(auth, async user => {
       if(!snap.exists() || snap.data()?.role !== "admin" || snap.data()?.protectedOwner !== true){
         await setDoc(doc(db,"users",user.uid), {...currentUserData, createdAt:serverTimestamp()}, {merge:true});
       }
-    } else if(!snap.exists()){
+    } else if(snap.exists() && snap.data()?.accountStatus === "deleted"){
+      // الحساب القديم المفسوخ لا يوقف الدخول؛ doLogin يواصل البحث عن إصدار نشط أحدث.
       await signOut(auth);
-      showAuthError("لم يتم إعداد هذا الحساب بعد. تواصل مع المدير.");
       return;
+    } else if(!snap.exists()){
+      // استرجاع عام للحسابات التي أُنشئت في Authentication ثم توقّف التسجيل قبل إنشاء users.
+      const recoveryName = String(user.displayName || "").trim().normalize("NFKC");
+      const recoveryRole = roleFromInternalEmail(user.email);
+      const isInternalAccount = (user.email || "").endsWith(`@${INTERNAL_EMAIL_DOMAIN}`);
+      if(isInternalAccount && recoveryName){
+        try{
+          let recoveredRole = recoveryRole;
+          let recoveredReporterId = null;
+          let reporterLookupBlocked = false;
+          if(!recoveredRole || recoveredRole === "reporter"){
+            try{
+              const reporterMatches = await getDocs(query(collection(db,"reporters"), where("name","==",recoveryName)));
+              if(reporterMatches.size === 1){
+                recoveredReporterId = reporterMatches.docs[0].id;
+                recoveredRole = "reporter";
+              }else if(recoveryRole === "reporter" && reporterMatches.size > 1){
+                recoveredRole = null;
+              }else if(!recoveryRole && reporterMatches.size === 0){
+                recoveredRole = null;
+              }
+            }catch(reporterLookupError){
+              reporterLookupBlocked = true;
+              // لا نمنع دخول الحساب بسبب منع قراءة البطاقة؛ يمكن للمدير ربطها لاحقاً.
+              if(!recoveryRole) recoveredRole = "reporter";
+              console.warn("تعذر قراءة بطاقة المراسل أثناء الاسترجاع:", reporterLookupError);
+            }
+          }
+          if(!recoveredRole || !SUPPORTED_ACCOUNT_ROLES.includes(recoveredRole)){
+            await signOut(auth);
+            showAuthError("لم يتم إعداد دور هذا الحساب بعد. اطلب من المدير إصلاح بطاقة الحساب.");
+            return;
+          }
+          currentUserData = {name:recoveryName, username:recoveryName, email:user.email, role:recoveredRole, reporterId:recoveredReporterId, needsReporterLink:recoveredRole === "reporter" && !recoveredReporterId, reporterLookupBlocked, mustChangePassword:false, recoveredAccount:true, createdAt:serverTimestamp()};
+          try{
+            await setDoc(doc(db,"users",user.uid), currentUserData, {merge:true});
+          }catch(userSetupError){
+            console.error("user setup recovery", userSetupError);
+            await signOut(auth);
+            showAuthError("تعذر حفظ إعداد الحساب. اطلب من المدير السماح بإنشاء ملف المستخدم.");
+            return;
+          }
+          if(recoveredReporterId){
+            try{
+              await updateDoc(doc(db,"reporters",recoveredReporterId), {linkedUserId:user.uid, linkedEmail:user.email, updatedAt:serverTimestamp()});
+            }catch(linkError){
+              console.warn("تم إنشاء ملف المستخدم، وتعذر تحديث رابط بطاقة المراسل بسبب قواعد Firestore:", linkError);
+            }
+          }
+        }catch(recoveryError){
+          console.error("account recovery", recoveryError);
+          await signOut(auth);
+          showAuthError("تعذر استرجاع إعداد الحساب. اطلب من المدير التحقق من بطاقة الحساب.");
+          return;
+        }
+      }else{
+        await signOut(auth);
+        showAuthError("لم يتم إعداد هذا الحساب بعد. تواصل مع المدير.");
+        return;
+      }
     } else {
       currentUserData = snap.data();
     }
@@ -560,34 +820,89 @@ window.switchAuthTab = (tab) => {
 };
 
 const INTERNAL_EMAIL_DOMAIN = "diwanfm.local";
+const SUPPORTED_ACCOUNT_ROLES = ["reporter","journalist","admin"];
 
-function internalEmailForName(name){
+function internalEmailForName(name, role="legacy", version=1){
   const source = String(name || "").trim().normalize("NFKC");
   let hash = 2166136261;
   for(const ch of source){ hash ^= ch.codePointAt(0); hash = Math.imul(hash, 16777619); }
-  return `user-${(hash >>> 0).toString(36)}@${INTERNAL_EMAIL_DOMAIN}`;
+  const suffix = SUPPORTED_ACCOUNT_ROLES.includes(role) ? `-${role}${version > 1 ? `-v${version}` : ""}` : "";
+  return `user-${(hash >>> 0).toString(36)}${suffix}@${INTERNAL_EMAIL_DOMAIN}`;
+}
+
+function candidateInternalEmailsForName(name){
+  const normalized = String(name || "").trim().normalize("NFKC");
+  const isKnownReporter = MAP_REPORTERS.some(item => String(item.reporter || "").trim().normalize("NFKC") === normalized);
+  const roleOrder = isKnownReporter ? ["reporter","journalist","admin"] : ["journalist","admin","reporter"];
+  const candidates = [];
+  // تجربة الإصدارات الجديدة أولاً ثم الحسابات القديمة، حتى يعود الدخول دائماً للحساب النشط الأخير.
+  for(let version=1; version<=20; version++){
+    for(const role of roleOrder) candidates.push(internalEmailForName(normalized,role,version));
+  }
+  candidates.push(internalEmailForName(normalized));
+  return candidates;
+}
+
+function roleFromInternalEmail(email){
+  const match = String(email || "").toLowerCase().match(/^user-[a-z0-9]+-(reporter|journalist|admin)(?:-v\d+)?@diwanfm\.local$/);
+  return match ? match[1] : null;
+}
+
+async function findReporterCardByName(name){
+  const normalizedName = String(name || "").trim().normalize("NFKC");
+  if(!normalizedName) return null;
+  const matches = await getDocs(query(collection(db,"reporters"), where("name","==",normalizedName)));
+  return matches.size === 1 ? matches.docs[0] : null;
+}
+
+async function migrateAccountData(oldUid, newUid){
+  if(!oldUid || !newUid || oldUid === newUid) return;
+  const oldEvaluations = await getDocs(query(collection(db,"evaluations"), where("evaluatorId","==",oldUid)));
+  for(const item of oldEvaluations.docs){
+    await updateDoc(item.ref, {evaluatorId:newUid, migratedFromEvaluatorId:oldUid, migratedAt:serverTimestamp()});
+  }
+  const oldMessages = await getDocs(query(collection(db,"messages"), where("senderId","==",oldUid)));
+  for(const item of oldMessages.docs){
+    await updateDoc(item.ref, {senderId:newUid, migratedFromSenderId:oldUid, migratedAt:serverTimestamp()});
+  }
 }
 
 window.doLogin = async () => {
   const identifier = document.getElementById("loginName").value.trim();
   const pass = document.getElementById("loginPassword").value;
   if(!identifier || !pass){ showAuthError("يرجى إدخال الاسم أو البريد الإلكتروني وكلمة السر"); return; }
-  try {
-    const email = identifier.includes("@") ? identifier.toLowerCase() : internalEmailForName(identifier);
-    await signInWithEmailAndPassword(auth, email, pass);
-  } catch(e) {
-    showAuthError("الاسم أو البريد الإلكتروني أو كلمة السر غير صحيحة.");
+  const candidates = identifier.includes("@") ? [identifier.toLowerCase()] : candidateInternalEmailsForName(identifier);
+  let lastError = null;
+  for(const email of candidates){
+    try{
+      await signInWithEmailAndPassword(auth, email, pass);
+      const signedUser = auth.currentUser;
+      const profileSnap = signedUser ? await getDoc(doc(db,"users",signedUser.uid)) : null;
+      if(profileSnap?.exists() && profileSnap.data()?.accountStatus === "deleted"){
+        await signOut(auth);
+        lastError = {code:"auth/deleted-account"};
+        continue;
+      }
+      return;
+    }catch(error){
+      lastError = error;
+    }
   }
+  showAuthError(lastError?.code === "auth/too-many-requests" ? "تم تجاوز عدد المحاولات. حاول لاحقاً أو تواصل مع الإدارة." : lastError?.code === "auth/deleted-account" ? "هذا الحساب مفسوخ ولا يوجد حساب نشط مطابق. أعد التسجيل بالاسم والدور الصحيح." : "الاسم أو البريد الإلكتروني أو كلمة السر غير صحيحة.");
 };
 
 window.doRegister = async () => {
   const name = document.getElementById("regName").value.trim();
   const pass = document.getElementById("regPassword").value;
+  const requestedRole = document.getElementById("regRole")?.value || "reporter";
   const code = document.getElementById("regCode").value.trim().toLowerCase();
-  const role = Object.keys(REGISTRATION_CODES).find(key => REGISTRATION_CODES[key] === code);
+  const roleFromCode = Object.keys(REGISTRATION_CODES).find(key => REGISTRATION_CODES[key] === code);
+  const role = requestedRole;
   if(!name || !pass || !code){ showAuthError("يرجى تعبئة الاسم وكلمة السر وكود التسجيل"); return; }
   if(pass.length < 6){ showAuthError("كلمة السر يجب أن تحتوي على 6 أحرف أو أرقام على الأقل"); return; }
-  if(!role){ showAuthError("كود التسجيل غير صحيح. اطلب الكود المناسب من الإدارة."); return; }
+  if(!SUPPORTED_ACCOUNT_ROLES.includes(requestedRole)){ showAuthError("نوع الحساب غير صحيح."); return; }
+  if(!roleFromCode){ showAuthError("كود التسجيل غير صحيح. اطلب الكود المناسب من الإدارة."); return; }
+  if(roleFromCode !== requestedRole){ showAuthError(`الكود المُدخل خاص بدور «${getRoleLabel(roleFromCode)}» وليس «${getRoleLabel(requestedRole)}». اختر الدور الصحيح أو اطلب الكود المناسب من الإدارة.`); return; }
   try {
     isRegistering = true;
     let existingReporter = null;
@@ -605,19 +920,65 @@ window.doRegister = async () => {
       }
       existingReporter = reporterMatches.docs[0];
     }
-    const email = internalEmailForName(name);
-    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+    // منع إنشاء حساب نشط ثانٍ، مع الاحتفاظ بأحدث حساب مفسوخ لإعادة ربط بياناته.
+    let priorDeletedAccount = null;
+    try{
+      const existingUsers = await getDocs(query(collection(db,"users"), where("name","==",name)));
+      const sameRoleUsers = existingUsers.docs
+        .map(d=>({uid:d.id,...d.data()}))
+        .filter(u=>u.role === role);
+      const activeSameRole = sameRoleUsers.some(u=>u.accountStatus !== "deleted");
+      if(activeSameRole){
+        isRegistering = false;
+        showAuthError("يوجد حساب نشط بهذا الاسم والدور. استعمل الدخول أو اطلب من الإدارة فسخ الحساب أولاً.");
+        return;
+      }
+      priorDeletedAccount = sameRoleUsers
+        .filter(u=>u.accountStatus === "deleted")
+        .sort((a,b)=>(b.accountVersion||1)-(a.accountVersion||1) || (b.deletedAt?.seconds||0)-(a.deletedAt?.seconds||0))[0] || null;
+    }catch(userLookupError){
+      // إذا كانت القراءة محمية قبل تسجيل الدخول، نواصل التسجيل؛ قواعد Firestore تبقى المرجع النهائي.
+      console.warn("تعذر فحص الحسابات السابقة قبل التسجيل:", userLookupError);
+    }
+    let cred = null;
+    let email = "";
+    let accountVersion = 1;
+    for(let version=1; version<=20; version++){
+      email = internalEmailForName(name, role, version);
+      try{
+        cred = await createUserWithEmailAndPassword(auth, email, pass);
+        accountVersion = version;
+        break;
+      }catch(createError){
+        if(createError.code !== "auth/email-already-in-use") throw createError;
+      }
+    }
+    if(!cred) throw {code:"auth/account-version-limit"};
     await updateProfile(cred.user, {displayName:name});
     let reporterId = null;
-    if(role === "reporter"){
-      reporterId = existingReporter.id;
-      await updateDoc(doc(db,"reporters",reporterId), {
-        linkedUserId:cred.user.uid, linkedEmail:email, updatedAt:serverTimestamp()
-      });
-    }
+    if(role === "reporter") reporterId = existingReporter.id;
+    // إنشاء users أولاً يمنع ظهور حساب Authentication بلا إعداد عند تعذر تحديث بطاقة المراسل.
     await setDoc(doc(db,"users",cred.user.uid), {
-      name, username:name, email, role, reporterId, registrationCode:code, mustChangePassword:false, createdAt:serverTimestamp()
+      name, username:name, email, role, reporterId, accountVersion, accountStatus:"active", restoredFromUid:priorDeletedAccount?.uid || null, registrationCode:code, mustChangePassword:false, createdAt:serverTimestamp()
     });
+    if(priorDeletedAccount?.uid){
+      try{
+        await migrateAccountData(priorDeletedAccount.uid, cred.user.uid);
+        await updateDoc(doc(db,"users",priorDeletedAccount.uid), {replacedByUid:cred.user.uid, dataMigratedTo:cred.user.uid, replacedAt:serverTimestamp()});
+      }catch(migrationError){
+        // لا نفشل التسجيل إذا كانت قواعد Firestore تمنع نقل بعض الوثائق؛ يبقى الربط موثقاً للحساب الجديد.
+        console.warn("تعذر نقل كل بيانات الحساب السابق:", migrationError);
+      }
+    }
+    if(role === "reporter"){
+      try{
+        await updateDoc(doc(db,"reporters",reporterId), {
+          linkedUserId:cred.user.uid, linkedEmail:email, updatedAt:serverTimestamp()
+        });
+      }catch(linkError){
+        console.warn("تم إنشاء الحساب، وتعذر تحديث رابط البطاقة:", linkError);
+      }
+    }
     isRegistering = false;
     await signOut(auth);
     switchAuthTab("login");
@@ -626,7 +987,13 @@ window.doRegister = async () => {
     showAuthError("✅ تم إنشاء الحساب. يمكنك الدخول الآن بالاسم وكلمة السر.");
   } catch(e) {
     isRegistering = false;
-    showAuthError("حدث خطأ أثناء إنشاء الحساب: " + (e.code || e.message));
+    try{ if(auth.currentUser) await signOut(auth); }catch(signOutError){ console.warn("تعذر إنهاء جلسة التسجيل الفاشل", signOutError); }
+    const friendly = e.code === "auth/email-already-in-use"
+      ? "يوجد حساب نشط بهذا الاسم. استعمل الدخول أو اطلب من الإدارة فسخه قبل التسجيل من جديد."
+      : e.code === "auth/account-version-limit"
+        ? "تعذر إنشاء إصدار جديد للحساب. تواصل مع الإدارة."
+        : "حدث خطأ أثناء إنشاء الحساب: " + (e.code || e.message);
+    showAuthError(friendly);
   }
 };
 
@@ -654,6 +1021,7 @@ function showAuthError(msg){
 // ========== NAVIGATION ==========
 window.showPage = (page) => {
   const allowed = page === "home" ||
+    page === "map" ||
     (page === "evaluate" && canEvaluate()) ||
     (page === "results") ||
     (page === "messages" && (currentRole === "reporter" || currentRole === "admin")) ||
@@ -665,9 +1033,308 @@ window.showPage = (page) => {
   const tab = document.querySelector(`[onclick="showPage('${page}')"]`);
   if(tab) tab.classList.add("active");
   if(page==="results"){ renderResults(); if(currentRole !== "reporter") populateChartSelect(); }
+  if(page==="map"){ initReporterMap(); renderReporterMap(); loadMapStats(); }
   if(page==="admin") loadAdmin();
   if(page==="evaluate") loadEvaluatePage();
   if(page==="messages") loadMessages();
+};
+
+// ========== وظائف خريطة المراسلين والإحصائيات الشهرية ==========
+function getCurrentMapMonth(){
+  const input = document.getElementById("mapStatsMonth");
+  if(!input) return new Date().toISOString().slice(0,7);
+  if(!input.value) input.value = new Date().toISOString().slice(0,7);
+  return input.value;
+}
+
+function getMapStats(item){
+  const stats = mapMonthlyStats[item.id] || {};
+  return {newsCount:Number(stats.newsCount)||0, videoCount:Number(stats.videoCount)||0, updatedAt:stats.updatedAt};
+}
+
+function mapStatsDocId(month, reporterId){
+  return `${month}__${reporterId}`;
+}
+
+function initReporterMap(){
+  const select = document.getElementById("mapGovernorateFilter");
+  if(select){
+    const current = select.value;
+    select.innerHTML = '<option value="">كل الولايات والمناطق</option>' +
+      mapDirectory.map(item=>`<option value="${item.id}">${item.governorate}${item.parentGovernorate?` — ${item.parentGovernorate}`:""}</option>`).join("");
+    if(current && mapDirectory.some(item=>item.id===current)) select.value = current;
+  }
+  getCurrentMapMonth();
+  const adminPanel = document.getElementById("mapAdminPanel");
+  if(adminPanel) adminPanel.style.display = currentRole === "admin" ? "block" : "none";
+  renderMapAdminForm();
+}
+
+function renderMapAdminForm(){
+  const body = document.getElementById("mapStatsAdminBody");
+  if(!body || currentRole !== "admin") return;
+  body.innerHTML = mapDirectory.map(item=>{
+    const stats = getMapStats(item);
+    return `<tr class="map-admin-row" data-map-id="${item.id}">
+      <td><strong>${item.governorate}</strong>${item.parentGovernorate?`<div style="font-size:.72rem;color:var(--muted)">${item.parentGovernorate}</div>`:""}</td>
+      <td>${item.reporter}</td>
+      <td><input type="number" min="0" step="1" id="mapNews-${item.id}" value="${stats.newsCount}" aria-label="عدد مراسلات ${item.reporter}"></td>
+      <td><input type="number" min="0" step="1" id="mapVideos-${item.id}" value="${stats.videoCount}" aria-label="عدد فيديوهات ${item.reporter}"></td>
+    </tr>`;
+  }).join("");
+}
+
+async function loadMapStats(){
+  const month = getCurrentMapMonth();
+  mapStatsLoadedMonth = month;
+  mapMonthlyStats = {};
+  try{
+    const snap = await getDocs(query(collection(db,"reporterMonthlyStats"),where("month","==",month)));
+    snap.docs.forEach(d=>{
+      const data = d.data();
+      if(data.reporterId) mapMonthlyStats[data.reporterId] = {id:d.id,...data};
+    });
+  }catch(error){
+    console.error("loadMapStats", error);
+  }
+  renderMapAdminForm();
+  renderReporterMap();
+}
+
+window.resetMapStatsForm = () => {
+  if(currentRole !== "admin") return;
+  document.querySelectorAll("#mapStatsAdminBody input[type=number]").forEach(input=>{input.value="";});
+};
+
+window.saveMonthlyMapStats = async () => {
+  if(currentRole !== "admin"){
+    alert("إدخال المعطيات الشهرية متاح لحساب المدير فقط.");
+    return;
+  }
+  const month = getCurrentMapMonth();
+  const rows = [...document.querySelectorAll("#mapStatsAdminBody .map-admin-row")];
+  if(!rows.length){ alert("تعذر تحميل قائمة المراسلين."); return; }
+  try{
+    const writes = rows.map(row=>{
+      const reporterId = row.dataset.mapId;
+      const item = mapDirectory.find(r=>r.id===reporterId);
+      const newsInput = row.querySelector(`#mapNews-${reporterId}`);
+      const videoInput = row.querySelector(`#mapVideos-${reporterId}`);
+      const newsCount = Math.max(0, parseInt(newsInput?.value || "0",10) || 0);
+      const videoCount = Math.max(0, parseInt(videoInput?.value || "0",10) || 0);
+      const payload = {month, reporterId, governorate:item?.governorate||"", parentGovernorate:item?.parentGovernorate||"", reporterName:item?.reporter||"", newsCount, videoCount, updatedBy:currentUser.uid, updatedByName:currentUserData?.name||currentUser.email, updatedAt:serverTimestamp()};
+      return setDoc(doc(db,"reporterMonthlyStats",mapStatsDocId(month,reporterId)),payload,{merge:true});
+    });
+    await Promise.all(writes);
+    alert(`✅ تم حفظ معطيات شهر ${month} وإتاحتها لجميع المستخدمين.`);
+    await loadMapStats();
+  }catch(error){
+    console.error("saveMonthlyMapStats", error);
+    alert(`تعذر حفظ المعطيات. السبب: ${error.code || error.message}`);
+  }
+};
+
+function getMapMonthLabel(month){
+  const [year, monthNumber] = String(month || "").split("-");
+  const names = ["", "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+  return year && monthNumber ? `${names[Number(monthNumber)] || monthNumber} ${year}` : month;
+}
+
+function getMapMonthlyReportRows(){
+  const month = getCurrentMapMonth();
+  return mapDirectory.map((item, index)=>{
+    const stats = getMapStats(item);
+    return {
+      "الترتيب": index + 1,
+      "الولاية": item.governorate,
+      "الولاية الأصلية": item.parentGovernorate || item.governorate,
+      "المراسل": item.reporter,
+      "المراسلات الإخبارية": stats.newsCount,
+      "الفيديوهات": stats.videoCount,
+      "الشهر": getMapMonthLabel(month)
+    };
+  });
+}
+
+function mapReportFileName(extension){
+  return `تقرير-خريطة-المراسلين-${getCurrentMapMonth()}.${extension}`;
+}
+
+function createMapMonthlyWorkbook(){
+  if(!window.XLSX) throw new Error("مكتبة Excel غير متاحة");
+  const month = getCurrentMapMonth();
+  const rows = getMapMonthlyReportRows();
+  const totalNews = rows.reduce((sum,row)=>sum + Number(row["المراسلات الإخبارية"] || 0), 0);
+  const totalVideos = rows.reduce((sum,row)=>sum + Number(row["الفيديوهات"] || 0), 0);
+  const summary = [
+    {"البيان":"تقرير خريطة المراسلين الشهري","القيمة":getMapMonthLabel(month)},
+    {"البيان":"إجمالي المراسلات الإخبارية","القيمة":totalNews},
+    {"البيان":"إجمالي الفيديوهات","القيمة":totalVideos},
+    {"البيان":"عدد المراسلين","القيمة":rows.length}
+  ];
+  const workbook = XLSX.utils.book_new();
+  const summarySheet = XLSX.utils.json_to_sheet(summary);
+  const detailsSheet = XLSX.utils.json_to_sheet(rows);
+  summarySheet["!cols"] = [{wch:34},{wch:26}];
+  detailsSheet["!cols"] = [{wch:10},{wch:20},{wch:20},{wch:28},{wch:24},{wch:15},{wch:18}];
+  XLSX.utils.book_append_sheet(workbook, summarySheet, "ملخص الشهر");
+  XLSX.utils.book_append_sheet(workbook, detailsSheet, "تفاصيل المراسلين");
+  return workbook;
+}
+
+window.exportMapMonthlyExcel = () => {
+  try{
+    const workbook = createMapMonthlyWorkbook();
+    XLSX.writeFile(workbook, mapReportFileName("xlsx"));
+  }catch(error){
+    console.error("exportMapMonthlyExcel", error);
+    alert("تعذر إنشاء ملف Excel: " + (error.message || error));
+  }
+};
+
+function buildMapMonthlyReportHTML(){
+  const month = getCurrentMapMonth();
+  const rows = getMapMonthlyReportRows();
+  const totalNews = rows.reduce((sum,row)=>sum + Number(row["المراسلات الإخبارية"] || 0), 0);
+  const totalVideos = rows.reduce((sum,row)=>sum + Number(row["الفيديوهات"] || 0), 0);
+  return `<div style="width:1100px;font-family:Cairo,Arial,sans-serif;direction:rtl;background:#fff;color:#1e293b">
+    <div style="background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;padding:34px 42px;text-align:center">
+      <div style="font-size:13px;opacity:.8;margin-bottom:8px">ديوان FM — قسم الأخبار</div>
+      <div style="font-size:29px;font-weight:900;margin-bottom:8px">تقرير خريطة المراسلين</div>
+      <div style="font-size:18px;opacity:.95">${getMapMonthLabel(month)}</div>
+    </div>
+    <div style="padding:26px 34px">
+      <div style="display:flex;gap:14px;margin-bottom:22px">
+        <div style="flex:1;background:#f0fdfa;border:1px solid #99e6db;border-radius:10px;padding:16px;text-align:center"><div style="color:#0f766e;font-weight:700">إجمالي المراسلات</div><strong style="font-size:25px;color:#0d9488">${totalNews}</strong></div>
+        <div style="flex:1;background:#f0fdfa;border:1px solid #99e6db;border-radius:10px;padding:16px;text-align:center"><div style="color:#0f766e;font-weight:700">إجمالي الفيديوهات</div><strong style="font-size:25px;color:#0d9488">${totalVideos}</strong></div>
+        <div style="flex:1;background:#f0fdfa;border:1px solid #99e6db;border-radius:10px;padding:16px;text-align:center"><div style="color:#0f766e;font-weight:700">عدد المراسلين</div><strong style="font-size:25px;color:#0d9488">${rows.length}</strong></div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+        <thead><tr style="background:#0d9488;color:#fff"><th style="padding:11px">#</th><th style="padding:11px;text-align:right">الولاية</th><th style="padding:11px;text-align:right">المراسل</th><th style="padding:11px">المراسلات الإخبارية</th><th style="padding:11px">الفيديوهات</th></tr></thead>
+        <tbody>${rows.map((row,index)=>`<tr style="background:${index%2===0?"#fff":"#f8fafc"}"><td style="padding:10px;text-align:center;border-bottom:1px solid #e2e8f0">${row["الترتيب"]}</td><td style="padding:10px;border-bottom:1px solid #e2e8f0">${row["الولاية"]}${row["الولاية الأصلية"] !== row["الولاية"] ? ` <small>(${row["الولاية الأصلية"]})</small>` : ""}</td><td style="padding:10px;border-bottom:1px solid #e2e8f0;font-weight:700">${row["المراسل"]}</td><td style="padding:10px;text-align:center;border-bottom:1px solid #e2e8f0;font-weight:800;color:#0f766e">${row["المراسلات الإخبارية"]}</td><td style="padding:10px;text-align:center;border-bottom:1px solid #e2e8f0;font-weight:800;color:#0f766e">${row["الفيديوهات"]}</td></tr>`).join("")}</tbody>
+      </table>
+      <div style="margin-top:24px;padding-top:12px;border-top:1px solid #cbd5e1;text-align:center;color:#64748b;font-size:11px">تم إنشاء التقرير من خريطة المراسلين — ${new Date().toLocaleDateString("ar-TN")}</div>
+    </div>
+  </div>`;
+}
+
+window.exportMapMonthlyPDF = async () => {
+  if(!window.html2canvas || !window.jspdf){ alert("مكتبات PDF غير متاحة. تحقق من الاتصال بالإنترنت ثم أعد المحاولة."); return; }
+  const container = document.createElement("div");
+  container.style.cssText = "position:fixed;top:-10000px;left:-10000px;background:#fff;z-index:-1";
+  container.innerHTML = buildMapMonthlyReportHTML();
+  document.body.appendChild(container);
+  try{
+    const canvas = await html2canvas(container,{scale:2,useCORS:true,backgroundColor:"#fff",logging:false});
+    const {jsPDF} = window.jspdf;
+    const doc = new jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
+    const pageW=297, pageH=210, imgW=pageW, imgH=(canvas.height*imgW)/canvas.width;
+    const imgData=canvas.toDataURL("image/jpeg",.94);
+    doc.addImage(imgData,"JPEG",0,0,imgW,imgH);
+    let remaining=imgH-pageH;
+    while(remaining>0){ doc.addPage(); doc.addImage(imgData,"JPEG",0,-(imgH-remaining),imgW,imgH); remaining-=pageH; }
+    doc.save(mapReportFileName("pdf"));
+  }catch(error){
+    console.error("exportMapMonthlyPDF",error);
+    alert("تعذر إنشاء ملف PDF: " + (error.message || error));
+  }finally{
+    if(document.body.contains(container)) document.body.removeChild(container);
+  }
+};
+
+window.shareMapMonthlyWhatsApp = async () => {
+  const month = getCurrentMapMonth();
+  const rows = getMapMonthlyReportRows();
+  const totalNews = rows.reduce((sum,row)=>sum + Number(row["المراسلات الإخبارية"] || 0), 0);
+  const totalVideos = rows.reduce((sum,row)=>sum + Number(row["الفيديوهات"] || 0), 0);
+  const message = `تقرير خريطة المراسلين — ${getMapMonthLabel(month)}\n\nإجمالي المراسلات الإخبارية: ${totalNews}\nإجمالي الفيديوهات: ${totalVideos}\nعدد المراسلين: ${rows.length}\n\n` + rows.map(row=>`${row["الولاية"]} — ${row["المراسل"]}: أخبار ${row["المراسلات الإخبارية"]} | فيديو ${row["الفيديوهات"]}`).join("\n");
+  try{
+    if(window.XLSX && navigator.share && navigator.canShare){
+      const workbook = createMapMonthlyWorkbook();
+      const bytes = XLSX.write(workbook,{bookType:"xlsx",type:"array"});
+      const file = new File([bytes],mapReportFileName("xlsx"),{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+      if(navigator.canShare({files:[file]})){
+        await navigator.share({title:`تقرير المراسلين — ${getMapMonthLabel(month)}`,text:message,files:[file]});
+        return;
+      }
+    }
+  }catch(error){
+    if(error?.name === "AbortError") return;
+    console.warn("native share unavailable",error);
+  }
+  window.open(`https://wa.me/?text=${encodeURIComponent(message)}`,"_blank","noopener,noreferrer");
+};
+
+window.selectMapReporter = (id) => {
+  selectedMapReporterId = id;
+  renderReporterMap();
+  const selected = document.querySelector(`.map-list-item[data-map-id="${id}"]`);
+  if(selected) selected.scrollIntoView({behavior:"smooth",block:"nearest"});
+};
+
+window.renderReporterMap = () => {
+  const search = (document.getElementById("mapSearch")?.value || "").trim().toLocaleLowerCase("ar");
+  const governorate = document.getElementById("mapGovernorateFilter")?.value || "";
+  const matches = mapDirectory.filter(item => {
+    const haystack = `${item.governorate} ${item.parentGovernorate||""} ${item.reporter}`.toLocaleLowerCase("ar");
+    return (!search || haystack.includes(search)) && (!governorate || item.id===governorate);
+  });
+  const count = document.getElementById("mapCount");
+  if(count) count.textContent = `${matches.length} من ${mapDirectory.length} مراسل`;
+  const matchIds = new Set(matches.map(item=>item.id));
+  const shapeReporterMap = {};
+  mapDirectory.forEach(item=>{shapeReporterMap[item.shapeKey] = item;});
+  const shapeList = Array.isArray(window.TUNISIA_GOVERNORATE_SHAPES) ? window.TUNISIA_GOVERNORATE_SHAPES : [];
+  const shapes = document.getElementById("mapShapes");
+  if(shapes){
+    shapes.innerHTML = shapeList.map(shape=>{
+      const reporter = shapeReporterMap[shape.key];
+      const visible = !search && !governorate ? true : reporter ? matchIds.has(reporter.id) : false;
+      const classes = `map-shape ${reporter?"has-reporter":"no-reporter"} ${visible?"":"filtered-out"} ${reporter && selectedMapReporterId===reporter.id?"selected":""}`;
+      const click = reporter ? `selectMapReporter('${reporter.id}')` : "void 0";
+      const label = reporter ? `<text class="map-governorate-label" x="${shape.cx}" y="${shape.cy}">${shape.name}</text>` : "";
+      return `<path class="${classes}" d="${shape.path}" data-shape-key="${shape.key}" aria-label="${shape.name}" onclick="${click}"></path>${label}`;
+    }).join("");
+  }
+  const markers = document.getElementById("mapMarkers");
+  if(markers){
+    markers.innerHTML = matches.map(item=>{
+      const shape = shapeList.find(s=>s.key===item.shapeKey);
+      const x = item.markerX ?? shape?.cx ?? 360;
+      const y = item.markerY ?? shape?.cy ?? 300;
+      const stats = getMapStats(item);
+      const active = selectedMapReporterId===item.id;
+      const label = item.parentGovernorate ? `${item.governorate} — ${item.parentGovernorate}` : item.governorate;
+      return `<g class="governorate-marker ${active?"active":""}" tabindex="0" role="button" aria-label="${label}: ${item.reporter}" onclick="selectMapReporter('${item.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectMapReporter('${item.id}')}" data-map-id="${item.id}">
+        <circle class="map-marker-pulse" cx="${x}" cy="${y}" r="13"></circle>
+        <circle class="map-marker-circle ${active?"active":""}" cx="${x}" cy="${y}" r="15"></circle>
+        <text class="map-marker-metric" x="${x}" y="${y+3}">${stats.newsCount}</text>
+        <text class="map-metric-label" x="${x}" y="${y+31}">أخبار ${stats.newsCount} • فيديو ${stats.videoCount}</text>
+        <title>${label} — ${item.reporter} — ${stats.newsCount} مراسلات، ${stats.videoCount} فيديوهات</title>
+      </g>`;
+    }).join("");
+  }
+  const selected = matches.find(item=>item.id===selectedMapReporterId) || matches[0];
+  const selectedBox = document.getElementById("mapSelectedReporter");
+  if(selectedBox){
+    if(selected){
+      selectedMapReporterId = selected.id;
+      const stats = getMapStats(selected);
+      selectedBox.className = "map-selected";
+      selectedBox.innerHTML = `<div class="selected-governorate">${selected.parentGovernorate?`منطقة ضمن ${selected.parentGovernorate}`:"الولاية"}</div><div class="selected-name">${selected.governorate}</div><div style="font-size:.9rem;margin-bottom:8px">${selected.reporter}</div><span class="selected-status">مراسل معتمد في الدليل</span><div class="map-stats-summary"><div class="map-stat-box"><strong>${stats.newsCount}</strong><span>مراسلات إخبارية</span></div><div class="map-stat-box"><strong>${stats.videoCount}</strong><span>فيديوهات</span></div></div><div class="map-updated">الشهر: ${mapStatsLoadedMonth || getCurrentMapMonth()}</div>`;
+    }else{
+      selectedMapReporterId = null;
+      selectedBox.className = "map-selected empty-selected";
+      selectedBox.textContent = "لا توجد نتائج مطابقة للبحث الحالي.";
+    }
+  }
+  const list = document.getElementById("mapReportersList");
+  if(list){
+    list.innerHTML = matches.length ? matches.map((item,index)=>{
+      const stats = getMapStats(item);
+      return `<div class="map-list-item ${selectedMapReporterId===item.id?"active":""}" data-map-id="${item.id}" onclick="selectMapReporter('${item.id}')"><div><strong>${item.governorate}${item.parentGovernorate?` <small style="font-weight:400;color:var(--muted)">(${item.parentGovernorate})</small>`:""}</strong><span>${item.reporter} — أخبار: ${stats.newsCount} | فيديو: ${stats.videoCount}</span></div><div class="map-list-pin">${index+1}</div></div>`;
+    }).join("") : '<div class="map-empty">لم يتم العثور على ولاية أو مراسل بهذا الاسم.</div>';
+  }
 };
 
 function normalizeRole(role){
@@ -679,25 +1346,44 @@ function getRoleLabel(role){
   return normalized === "admin" ? "الإدارة" : normalized === "reporter" ? "مراسل" : "صحفي";
 }
 
-function anonymousEvaluatorLabel(evals, evaluatorId){
-  const ids = [...new Set((evals || []).map(e => e.evaluatorId).filter(Boolean))].sort();
-  const index = ids.indexOf(evaluatorId);
-  return index >= 0 ? `صحفي ${index + 1}` : "صحفي";
+function isOwnerAccount(){
+  return (currentUser?.email || currentUserData?.email || "").toLowerCase() === OWNER_EMAIL || currentUserData?.protectedOwner === true;
 }
 
 function canEvaluate(){
+  if(isOwnerAccount()) return false;
   const normalized = normalizeRole(currentRole || currentUserData?.role);
   return normalized === "journalist" || normalized === "admin" || currentUserData?.canEvaluate === true;
+}
+
+function createAnonymousJournalistLabels(evaluations){
+  const labels = new Map();
+  [...(evaluations || [])]
+    .sort((a,b)=>String(a.evaluatorId || a.id || "").localeCompare(String(b.evaluatorId || b.id || "")))
+    .forEach((evaluation,index)=>{
+      const key = String(evaluation.evaluatorId || evaluation.id || `evaluation-${index}`);
+      if(!labels.has(key)) labels.set(key, `صحفي ${labels.size + 1}`);
+    });
+  return labels;
+}
+
+function getAnonymousJournalistLabel(evaluation, labels, index=0){
+  const key = String(evaluation?.evaluatorId || evaluation?.id || `evaluation-${index}`);
+  return labels?.get(key) || `صحفي ${index + 1}`;
 }
 
 function applyRoleUI(){
   const isAdmin = currentRole === "admin";
   const isReporter = currentRole === "reporter";
   document.getElementById("evaluateTabBtn").style.display = canEvaluate() ? "block" : "none";
-  document.getElementById("resultsTabBtn").textContent = isReporter ? "📈 تقييمي" : "📈 تقييماتي";
+  document.getElementById("resultsTabBtn").textContent = isReporter ? "📈 تقييمي" : isAdmin ? "📊 تقييمات الصحفيين" : "📈 تقييماتي";
   document.getElementById("messagesTabBtn").style.display = (isReporter || isAdmin) ? "block" : "none";
   document.getElementById("adminTabBtn").style.display = isAdmin ? "block" : "none";
   document.getElementById("exportPdfBtn").style.display = isAdmin ? "flex" : "none";
+  const mapAdminPanel = document.getElementById("mapAdminPanel");
+  if(mapAdminPanel) mapAdminPanel.style.display = isAdmin ? "block" : "none";
+  const statMyEvalsLabel = document.getElementById("statMyEvalsLabel");
+  if(statMyEvalsLabel) statMyEvalsLabel.textContent = isAdmin ? "إجمالي تقييمات الصحفيين" : "تقييماتي هذا الشهر";
   document.getElementById("homeSummaryTitle").textContent = isReporter ? "📋 آخر تقييماتي" : "🏆 أفضل المراسلين هذا الشهر";
   if(isReporter){ document.getElementById("messagesTitle").textContent = "💬 مراسلة الإدارة"; }
 }
@@ -718,13 +1404,14 @@ async function loadHome(){
   const myEvals = evals.filter(e=>e.evaluatorId===currentUser.uid);
   document.getElementById("statReporters").textContent = reporters.length;
   document.getElementById("statEvals").textContent = evals.length;
-  document.getElementById("statMyEvals").textContent = myEvals.length;
+  document.getElementById("statMyEvals").textContent = isAdmin ? evals.length : myEvals.length;
   if(isReporter){
+    const anonymousLabels = createAnonymousJournalistLabels(evals);
     document.getElementById("statReporters").textContent = "1";
     document.getElementById("statEvals").textContent = evals.length;
     document.getElementById("statMyEvals").textContent = evals.length;
     document.getElementById("statAvg").textContent = evals.length ? (evals.reduce((s,e)=>s+e.total,0)/evals.length).toFixed(1) : "—";
-    document.getElementById("topReportersList").innerHTML = evals.length ? evals.map(e=>`<div class="eval-list-item"><div class="eval-list-header"><strong>${anonymousEvaluatorLabel(evals, e.evaluatorId)}</strong><span class="badge ${getBadgeClass(e.total)}">${e.total}/100 — ${e.classification||getClass(e.total)}</span></div><div style="font-size:.82rem;color:var(--muted)">${month}</div><button class="btn btn-secondary" style="margin-top:10px;padding:6px 12px;font-size:.8rem" onclick="showOwnEvalDetail('${month}')">🔍 عرض التفاصيل</button></div>`).join("") : `<div class="empty"><div class="empty-icon">📭</div><h3>لا توجد تقييمات منشورة لك هذا الشهر</h3><p style="font-size:.85rem">يمكنك مراسلة الإدارة عند الحاجة.</p></div>`;
+    document.getElementById("topReportersList").innerHTML = evals.length ? evals.map((e,index)=>`<div class="eval-list-item"><div class="eval-list-header"><strong>${getAnonymousJournalistLabel(e,anonymousLabels,index)}</strong><span class="badge ${getBadgeClass(e.total)}">${e.total}/100 — ${e.classification||getClass(e.total)}</span></div><div style="font-size:.82rem;color:var(--muted)">${month}</div><button class="btn btn-secondary" style="margin-top:10px;padding:6px 12px;font-size:.8rem" onclick="showOwnEvalDetail('${month}')">🔍 عرض التفاصيل</button></div>`).join("") : `<div class="empty"><div class="empty-icon">📭</div><h3>لا توجد تقييمات منشورة لك هذا الشهر</h3><p style="font-size:.85rem">يمكنك مراسلة الإدارة عند الحاجة.</p></div>`;
     return;
   }
   if(!isAdmin){
@@ -786,6 +1473,10 @@ async function loadEvaluatePage(){
 document.getElementById("evalMonth").addEventListener("change",()=>{loadEvaluatePage();loadHome();});
 
 window.selectReporter = async (id, name, alreadyEval) => {
+  if(!canEvaluate()){
+    alert(isOwnerAccount() ? "حساب المالك مخصص للإدارة ولا يملك صلاحية التقييم. استخدم حسابك الصحفي الشخصي للتقييم." : "هذا الحساب لا يملك صلاحية التقييم.");
+    return;
+  }
   selectedReporterId = id;
   document.getElementById("criteriaFormTitle").textContent = `تقييم: ${name}`;
   scores = {}; justifications = {};
@@ -823,13 +1514,14 @@ function renderCriteriaForm(){
 }
 
 window.setScore = (id, val, btn) => {
+  if(!canEvaluate()) return;
   scores[id] = val;
   btn.closest(".score-inputs").querySelectorAll(".score-btn").forEach(b=>b.classList.remove("selected"));
   btn.classList.add("selected");
   updateTotal();
 };
 
-window.setJustification = (id, val) => { justifications[id] = val; };
+window.setJustification = (id, val) => { if(canEvaluate()) justifications[id] = val; };
 
 function updateTotal(){
   let total = 0;
@@ -898,7 +1590,8 @@ window.renderResults = async () => {
     if(!ownEvals.length){
       document.getElementById("resultsTable").innerHTML = `<div class="empty"><div class="empty-icon">📭</div><h3>لا يوجد تقييم لهذا الشهر بعد</h3><p style="font-size:.85rem;margin-top:6px">سيظهر تقييمك هنا بعد اعتماده من الصحفيين.</p></div>`;
     } else {
-      document.getElementById("resultsTable").innerHTML = ownEvals.map(e=>`<div class="eval-list-item"><div class="eval-list-header"><strong>تقييم ${anonymousEvaluatorLabel(ownEvals, e.evaluatorId)}</strong><span class="badge ${getBadgeClass(e.total)}">${e.total}/100</span></div><div class="detail-criteria">${CRITERIA.map(c=>`<div class="detail-crit"><div class="detail-crit-name">${c.name}</div><div class="detail-crit-score">${e.scores?.[c.id]||0}<span style="font-size:.7rem;color:var(--muted)">/10</span></div><div class="detail-crit-justify">${e.justifications?.[c.id]||"—"}</div></div>`).join("")}</div></div>`).join("");
+      const anonymousLabels = createAnonymousJournalistLabels(ownEvals);
+      document.getElementById("resultsTable").innerHTML = ownEvals.map((e,index)=>`<div class="eval-list-item"><div class="eval-list-header"><strong>تقييم ${getAnonymousJournalistLabel(e,anonymousLabels,index)}</strong><span class="badge ${getBadgeClass(e.total)}">${e.total}/100</span></div><div class="detail-criteria">${CRITERIA.map(c=>`<div class="detail-crit"><div class="detail-crit-name">${c.name}</div><div class="detail-crit-score">${e.scores?.[c.id]||0}<span style="font-size:.7rem;color:var(--muted)">/10</span></div><div class="detail-crit-justify">${e.justifications?.[c.id]||"—"}</div></div>`).join("")}</div></div>`).join("");
     }
     document.getElementById("evolutionChart").parentElement.parentElement.style.display = "none";
     document.getElementById("criteriaChart").parentElement.parentElement.style.display = "none";
@@ -1037,8 +1730,9 @@ window.showOwnEvalDetail = async (month) => {
   if(currentRole !== "reporter") return;
   const snap = await getDocs(query(collection(db,"evaluations"),where("month","==",month),where("reporterId","==",currentUserData.reporterId)));
   const evals = snap.docs.map(d=>d.data());
+  const anonymousLabels = createAnonymousJournalistLabels(evals);
   document.getElementById("evalDetailTitle").textContent = `تفاصيل تقييمك — ${month}`;
-  document.getElementById("evalDetailContent").innerHTML = evals.map(e=>`<div class="eval-list-item"><div class="eval-list-header"><strong>${anonymousEvaluatorLabel(evals, e.evaluatorId)}</strong><span class="badge ${getBadgeClass(e.total)}">${e.total}/100</span></div><div class="detail-criteria">${CRITERIA.map(c=>`<div class="detail-crit"><div class="detail-crit-name">${c.name}</div><div class="detail-crit-score">${e.scores?.[c.id]||0}/10</div><div class="detail-crit-justify">${e.justifications?.[c.id]||"—"}</div></div>`).join("")}</div></div>`).join("");
+  document.getElementById("evalDetailContent").innerHTML = evals.map((e,index)=>`<div class="eval-list-item"><div class="eval-list-header"><strong>${getAnonymousJournalistLabel(e,anonymousLabels,index)}</strong><span class="badge ${getBadgeClass(e.total)}">${e.total}/100</span></div><div class="detail-criteria">${CRITERIA.map(c=>`<div class="detail-crit"><div class="detail-crit-name">${c.name}</div><div class="detail-crit-score">${e.scores?.[c.id]||0}/10</div><div class="detail-crit-justify">${e.justifications?.[c.id]||"—"}</div></div>`).join("")}</div></div>`).join("");
   document.getElementById("evalDetailModal").classList.add("active");
 };
 
@@ -1055,17 +1749,17 @@ async function loadAdmin(){
     : `<div class="empty"><div class="empty-icon">👤</div><h3>لا يوجد مراسلون بعد</h3></div>`;
 
   const usersSnap = await getDocs(collection(db,"users"));
-  const users = usersSnap.docs.map(d=>({uid:d.id,...d.data()}));
-  const adminUsers = users.filter(u=>u.role==="admin").sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
-  const firstAdminUid = adminUsers[0]?.uid;
-
+  const users = usersSnap.docs.map(d=>({uid:d.id,...d.data()})).filter(u=>u.accountStatus !== "deleted");
   document.getElementById("usersList").innerHTML = users.map(u=>{
-    const isFirstAdmin = u.uid === firstAdminUid;
+    const isOwnerAccount = (u.email || "").toLowerCase() === OWNER_EMAIL || u.protectedOwner === true;
+    const isSelf = u.uid === currentUser?.uid;
     let actionBtn = "";
-    if(u.role !== "admin"){
-      actionBtn = `<button class="btn btn-danger" onclick="deleteUser('${u.uid}','${u.name.replace(/'/g,"\\'")}')" style="padding:6px 14px;font-size:0.82rem">🗑️ حذف</button>`;
-    } else if(isFirstAdmin){
-      actionBtn = `<span style="font-size:0.78rem;background:#d1fae5;color:#065f46;padding:4px 10px;border-radius:20px;font-weight:700">المدير الرئيسي</span>`;
+    if(isOwnerAccount){
+      actionBtn = `<span style="font-size:0.78rem;background:#d1fae5;color:#065f46;padding:4px 10px;border-radius:20px;font-weight:700">حساب المالك محمي</span>`;
+    }else if(isSelf){
+      actionBtn = `<span style="font-size:0.78rem;background:#fef3c7;color:#92400e;padding:4px 10px;border-radius:20px;font-weight:700">الحساب الحالي</span>`;
+    }else{
+      actionBtn = `<button class="btn btn-danger" onclick="deleteUser('${u.uid}','${String(u.name||u.email||"").replace(/'/g,"\\'")}','${u.role||""}')" style="padding:6px 14px;font-size:0.82rem">🗑️ حذف</button>`;
     }
     return `<div class="reporter-item">
       <div>
@@ -1081,6 +1775,8 @@ async function loadAdmin(){
   const ym = now.toISOString().slice(0,7);
   const adminMonthEl = document.getElementById("adminEvalsMonth");
   if(!adminMonthEl.value) adminMonthEl.value = ym;
+  const adminEvaluationReportMonth = document.getElementById("adminEvaluationReportMonth");
+  if(adminEvaluationReportMonth && !adminEvaluationReportMonth.value) adminEvaluationReportMonth.value = ym;
 
   // تعبئة فلتر المراسلين
   const filterSel = document.getElementById("adminEvalsReporterFilter");
@@ -1167,6 +1863,67 @@ window.loadAllEvals = async function(){
   }).join("");
 };
 
+window.exportAdminMonthlyEvaluationsPDF = async () => {
+  if(currentRole !== "admin"){
+    alert("هذا التقرير متاح لحسابات الإدارة فقط.");
+    return;
+  }
+  if(!window.html2canvas || !window.jspdf){
+    alert("مكتبات PDF غير متاحة. تحقق من الاتصال بالإنترنت ثم أعد المحاولة.");
+    return;
+  }
+  const month = document.getElementById("adminEvaluationReportMonth")?.value || new Date().toISOString().slice(0,7);
+  const status = document.getElementById("adminEvaluationReportStatus");
+  if(status) status.textContent = "⏳ جارٍ جمع التقييمات وإنشاء ملف التقييم المفصل...";
+  try{
+    const [reporters, evaluationsSnap] = await Promise.all([
+      getReporters(),
+      getDocs(query(collection(db,"evaluations"), where("month","==",month)))
+    ]);
+    const evaluations = evaluationsSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const grouped = {};
+    reporters.forEach(r=>grouped[r.id]=[]);
+    evaluations.forEach(e=>{ if(!grouped[e.reporterId]) grouped[e.reporterId]=[]; grouped[e.reporterId].push(e); });
+    const monthLabel = getMapMonthLabel(month);
+    const totalReporters = reporters.length;
+    const evaluatedReporters = reporters.filter(r=>grouped[r.id]?.length).length;
+    const avg = evaluations.length ? (evaluations.reduce((sum,e)=>sum + Number(e.total||0),0) / evaluations.length).toFixed(1) : "—";
+    const reporterSections = reporters.map((reporter,index)=>{
+      const reporterEvals = grouped[reporter.id] || [];
+      const reporterAvg = reporterEvals.length ? (reporterEvals.reduce((sum,e)=>sum + Number(e.total||0),0)/reporterEvals.length).toFixed(1) : "—";
+      const evaluationBlocks = reporterEvals.length ? reporterEvals.map((evaluation,evalIndex)=>`<div style="border:1px solid #cbd5e1;border-radius:10px;margin-bottom:14px;overflow:hidden;page-break-inside:avoid">
+        <div style="background:#f0fdfa;border-bottom:1px solid #99e6db;padding:12px 14px;display:flex;justify-content:space-between;gap:12px;align-items:center">
+          <div><strong style="color:#0f766e">تقييم الصحفي: ${evaluation.evaluatorName || "صحفي غير مسمى"}</strong><div style="font-size:11px;color:#64748b;margin-top:4px">التقييم رقم ${evalIndex+1} — ${evaluation.evaluatorRole === "admin" ? "إدارة" : "صحفي"}</div></div>
+          <div style="font-size:18px;font-weight:900;color:#0d9488">${Number(evaluation.total||0).toFixed(1)}/100<div style="font-size:10px;color:#64748b;text-align:center">${evaluation.classification || getClass(Number(evaluation.total||0))}</div></div>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:11px;direction:rtl"><thead><tr style="background:#f8fafc"><th style="padding:8px;text-align:right;border-bottom:1px solid #e2e8f0">المعيار</th><th style="padding:8px;text-align:center;border-bottom:1px solid #e2e8f0">العلامة</th><th style="padding:8px;text-align:center;border-bottom:1px solid #e2e8f0">الوزن</th><th style="padding:8px;text-align:right;border-bottom:1px solid #e2e8f0">التعليل</th></tr></thead><tbody>${CRITERIA.map(c=>`<tr><td style="padding:8px;border-bottom:1px solid #eef2f7;font-weight:700">${c.name}</td><td style="padding:8px;text-align:center;border-bottom:1px solid #eef2f7;font-weight:900;color:#0f766e">${evaluation.scores?.[c.id] || 0}/10</td><td style="padding:8px;text-align:center;border-bottom:1px solid #eef2f7;color:#64748b">${c.weight}%</td><td style="padding:8px;border-bottom:1px solid #eef2f7;line-height:1.6">${evaluation.justifications?.[c.id] || "—"}</td></tr>`).join("")}</tbody></table>
+      </div>`).join("") : `<div style="padding:18px;background:#fffbeb;border:1px dashed #f59e0b;border-radius:9px;color:#92400e;font-size:12px">لم يُسجّل أي تقييم لهذا المراسل خلال الشهر المحدد.</div>`;
+      return `<section style="margin-bottom:22px;page-break-inside:avoid"><div style="background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;padding:14px 18px;border-radius:10px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:18px;font-weight:900">${index+1}. ${reporter.name}</div><div style="font-size:11px;opacity:.85;margin-top:4px">${reporter.region||""}</div></div><div style="text-align:left;font-size:12px">${reporterEvals.length} تقييم<br><strong style="font-size:16px">متوسط ${reporterAvg}</strong></div></div>${evaluationBlocks}</section>`;
+    }).join("");
+    const container = document.createElement("div");
+    container.style.cssText = "width:1000px;font-family:Cairo,Arial,sans-serif;direction:rtl;background:#fff;color:#1e293b;position:fixed;top:-10000px;left:-10000px;padding:0";
+    container.innerHTML = `<div style="background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;padding:38px 42px;text-align:center"><div style="font-size:12px;opacity:.8;margin-bottom:8px">ملف تقييم مفصل — للإدارة فقط — ديوان FM</div><div style="font-size:27px;font-weight:900;margin-bottom:8px">التقرير الشهري الشامل لتقييمات المراسلين</div><div style="font-size:17px">${monthLabel}</div></div><div style="padding:28px 34px"><div style="display:flex;gap:12px;margin-bottom:24px"><div style="flex:1;text-align:center;background:#f0fdfa;border:1px solid #99e6db;border-radius:9px;padding:12px"><div style="font-size:11px;color:#0f766e">عدد المراسلين</div><strong style="font-size:22px;color:#0d9488">${totalReporters}</strong></div><div style="flex:1;text-align:center;background:#f0fdfa;border:1px solid #99e6db;border-radius:9px;padding:12px"><div style="font-size:11px;color:#0f766e">مراسلون تم تقييمهم</div><strong style="font-size:22px;color:#0d9488">${evaluatedReporters}</strong></div><div style="flex:1;text-align:center;background:#f0fdfa;border:1px solid #99e6db;border-radius:9px;padding:12px"><div style="font-size:11px;color:#0f766e">عدد التقييمات</div><strong style="font-size:22px;color:#0d9488">${evaluations.length}</strong></div><div style="flex:1;text-align:center;background:#f0fdfa;border:1px solid #99e6db;border-radius:9px;padding:12px"><div style="font-size:11px;color:#0f766e">المتوسط العام</div><strong style="font-size:22px;color:#0d9488">${avg}</strong></div></div>${reporterSections}<div style="margin-top:24px;padding-top:12px;border-top:1px solid #cbd5e1;text-align:center;color:#64748b;font-size:10px">ملف تقييم مفصل — مخصص لحسابات الإدارة فقط — ${new Date().toLocaleDateString("ar-TN")}</div></div>`;
+    document.body.appendChild(container);
+    const canvas = await html2canvas(container,{scale:2,useCORS:true,backgroundColor:"#fff",logging:false});
+    const {jsPDF} = window.jspdf;
+    const doc = new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
+    const pageW=210, pageH=297, imgW=pageW, imgH=(canvas.height*imgW)/canvas.width;
+    const imgData=canvas.toDataURL("image/jpeg",.94);
+    doc.addImage(imgData,"JPEG",0,0,imgW,imgH);
+    let remaining=imgH-pageH;
+    while(remaining>0){ doc.addPage(); doc.addImage(imgData,"JPEG",0,-(imgH-remaining),imgW,imgH); remaining-=pageH; }
+    doc.save(`ملف-التقييم-المفصل-${month}.pdf`);
+    document.body.removeChild(container);
+    if(status) status.textContent = `✅ تم إنشاء ملف التقييم المفصل لشهر ${monthLabel}.`;
+  }catch(error){
+    console.error("exportAdminMonthlyEvaluationsPDF",error);
+    const hidden = document.querySelector('body > div[style*="top: -10000px"]');
+    if(hidden) hidden.remove();
+    if(status) status.textContent = "تعذر إنشاء التقرير.";
+    alert("تعذر إنشاء تقرير PDF: " + (error.code || error.message || error));
+  }
+};
+
 window.openAddReporter = () => document.getElementById("addReporterModal").classList.add("active");
 window.closeModal = (id) => document.getElementById(id).classList.remove("active");
 
@@ -1194,23 +1951,35 @@ window.deleteReporter = async (id) => {
 };
 
 
-        window.deleteUser = async function(uid, name) {
+        window.deleteUser = async function(uid, name, role) {
             if (!currentUserData || currentUserData.role !== 'admin') return;
-            // التحقق من أنه ليس المدير الأول
-            const usersSnap2 = await getDocs(collection(db,"users"));
-            const allUsers = usersSnap2.docs.map(d=>({uid:d.id,...d.data()}));
-            const adminUsers2 = allUsers.filter(u=>u.role==="admin").sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
-            if(adminUsers2[0]?.uid === uid){
-                alert("⛔ لا يمكن حذف المدير الرئيسي للنظام.");
+            if(uid === currentUser?.uid){
+                alert("⛔ لا يمكنك حذف الحساب الذي تستخدمه حالياً.");
                 return;
             }
-            if (!confirm(`هل تريد حذف المستخدم "${name}"؟\nسيتم حذف حسابه وجميع تقييماته.\nلا يمكن التراجع عن هذا الإجراء.`)) return;
-            // حذف وثيقة المستخدم من Firestore (يمنعه من الدخول فوراً)
-            await deleteDoc(doc(db, 'users', uid));
-            // حذف جميع التقييمات التي أجراها هذا المستخدم
-            const evalSnap = await getDocs(query(collection(db,"evaluations"), where("evaluatorId","==", uid)));
-            for(const d of evalSnap.docs) await deleteDoc(d.ref);
-            await loadAdmin();
+            const targetSnap = await getDoc(doc(db,"users",uid));
+            const target = targetSnap.exists() ? {uid, ...targetSnap.data()} : {uid, name, role};
+            const isOwnerAccount = (target.email || "").toLowerCase() === OWNER_EMAIL || target.protectedOwner === true;
+            if(isOwnerAccount){
+                alert("⛔ لا يمكن حذف حساب مالك النظام.");
+                return;
+            }
+            const roleLabel = getRoleLabel(target.role || role);
+            const warning = target.role === "admin" ? "\n⚠️ هذا حساب إدارة وسيُزال من قائمة المستخدمين." : "";
+            if (!confirm(`هل تريد حذف المستخدم "${name}"؟\nالدور: ${roleLabel}.${warning}\nسيتم حذف ملفه من المنصة وتقييماته التي أنشأها.\nلا يمكن التراجع عن هذا الإجراء.`)) return;
+            try{
+              await setDoc(doc(db, 'users', uid), {accountStatus:"deleted", deletedAt:serverTimestamp(), deletedBy:currentUser.uid, deletedByName:currentUserData?.name||currentUser.email}, {merge:true});
+              const evalSnap = await getDocs(query(collection(db,"evaluations"), where("evaluatorId","==", uid)));
+              for(const d of evalSnap.docs) await deleteDoc(d.ref);
+              if(target.reporterId){
+                try{ await updateDoc(doc(db,"reporters",target.reporterId), {linkedUserId:deleteField(), linkedEmail:deleteField(), updatedAt:serverTimestamp()}); }catch(linkError){ console.warn("تعذر تنظيف رابط بطاقة المراسل", linkError); }
+              }
+              alert(`✅ تم تعطيل حساب ${roleLabel} وإزالته من قائمة المستخدمين.`);
+              await loadAdmin();
+            }catch(error){
+              console.error("deleteUser", error);
+              alert("تعذر حذف الحساب: " + (error.code || error.message));
+            }
         };
 
         window.copyJoinCode = () => {
@@ -1522,7 +2291,7 @@ window.exportPDF = async () => {
   container.innerHTML = `
     <!-- COVER HEADER -->
     <div style="background:linear-gradient(135deg,#0d9488,#0f766e);color:white;padding:44px 40px;text-align:center">
-      <div style="font-size:11px;opacity:0.75;letter-spacing:2px;margin-bottom:8px">وثيقة سرية — ديوان FM / قسم الأخبار</div>
+      <div style="font-size:11px;opacity:0.75;letter-spacing:2px;margin-bottom:8px">ملف تقييم مفصل — ديوان FM / قسم الأخبار</div>
       <div style="font-size:30px;font-weight:900;margin-bottom:8px">التقرير الشهري الشامل</div>
       <div style="font-size:16px;opacity:0.9;margin-bottom:4px">${monthLabel}</div>
       <div style="margin-top:16px;display:flex;justify-content:center;gap:30px;font-size:0.88em;opacity:0.85">
@@ -1572,7 +2341,7 @@ window.exportPDF = async () => {
 
       <!-- Footer -->
       <div style="margin-top:30px;padding-top:14px;border-top:1px solid #e2e8f0;text-align:center;font-size:10px;color:#94a3b8">
-        ديوان FM — تقرير شامل — للإدارة فقط — سري وغير مخصص للتوزيع — ${new Date().toLocaleDateString('ar-TN')}
+        ديوان FM — تقرير شامل — للإدارة فقط — مفصل وغير مخصص للتوزيع — ${new Date().toLocaleDateString('ar-TN')}
       </div>
     </div>`;
 
@@ -1664,7 +2433,7 @@ window.exportReporterPDF = async (reporterId, reporterName, month) => {
   container.style.cssText = 'width:794px;font-family:Cairo,Arial,sans-serif;direction:rtl;background:white;position:fixed;top:-9999px;left:-9999px;padding:0';
   container.innerHTML = `
     <div style="background:linear-gradient(135deg,#0d9488,#0f766e);color:white;padding:36px 40px;text-align:center">
-      <div style="font-size:11px;opacity:0.8;margin-bottom:6px;letter-spacing:1px">سري — ديوان FM / قسم الأخبار</div>
+      <div style="font-size:11px;opacity:0.8;margin-bottom:6px;letter-spacing:1px">ملف تقييم مفصل — ديوان FM / قسم الأخبار</div>
       <div style="font-size:26px;font-weight:900;margin-bottom:6px">تقرير الأداء الشهري</div>
       <div style="font-size:15px;opacity:0.9">${monthLabel}</div>
     </div>
@@ -1697,7 +2466,7 @@ window.exportReporterPDF = async (reporterId, reporterName, month) => {
         <div style="background:#fffbeb;border:1px solid #f59e0b;border-radius:10px;padding:16px">${recoHTML}</div>`:''}
 
       <div style="margin-top:28px;padding-top:14px;border-top:1px solid #e2e8f0;text-align:center;font-size:10px;color:#94a3b8">
-        ديوان FM — وثيقة داخلية سرية — المقيمون مجهولو الهوية — غير مخصصة للتوزيع — ${new Date().toLocaleDateString('ar-TN')}
+        ديوان FM — ملف تقييم مفصل داخلي — المقيمون مجهولو الهوية — غير مخصصة للتوزيع — ${new Date().toLocaleDateString('ar-TN')}
       </div>
     </div>`;
 
